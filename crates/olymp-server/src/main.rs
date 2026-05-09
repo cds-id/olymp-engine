@@ -147,7 +147,18 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/audit-logs", axum::routing::get(olymp_monitoring::handlers::query_audit_logs))
         .with_state(monitoring_state);
 
-    app = app.merge(region_routes).merge(event_routes).merge(rbac_routes).merge(participant_routes).merge(exam_routes).merge(monitoring_routes);
+    // Ranking routes (State<PgPool>)
+    let ranking_routes = axum::Router::new()
+        .route("/api/stages/{stage_id}/ranking/rules", axum::routing::get(olymp_ranking::handlers::get_ranking_rule).post(olymp_ranking::handlers::upsert_ranking_rule))
+        .route("/api/stages/{stage_id}/ranking/calculate", axum::routing::post(olymp_ranking::handlers::calculate_ranking))
+        .route("/api/stages/{stage_id}/ranking", axum::routing::get(olymp_ranking::handlers::get_ranking))
+        .route("/api/stages/{stage_id}/ranking/review", axum::routing::post(olymp_ranking::handlers::review_ranking))
+        .route("/api/stages/{stage_id}/ranking/approve", axum::routing::post(olymp_ranking::handlers::approve_ranking))
+        .route("/api/stages/{stage_id}/ranking/publish", axum::routing::post(olymp_ranking::handlers::publish_ranking))
+        .route("/api/stages/{stage_id}/promote", axum::routing::post(olymp_ranking::handlers::promote))
+        .with_state(db_pool.clone());
+
+    app = app.merge(region_routes).merge(event_routes).merge(rbac_routes).merge(participant_routes).merge(exam_routes).merge(monitoring_routes).merge(ranking_routes);
 
     // Add Swagger UI only in development
     if matches!(config.app.environment, olymp_core::config::Env::Dev) {

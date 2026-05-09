@@ -2,22 +2,14 @@
 name = "olymp-ranking"
 version.workspace = true
 edition.workspace = true
-authors.workspace = true
-license.workspace = true
 
 [dependencies]
-tokio = { workspace = true }
+olymp-core = { path = "../olymp-core" }
 axum = { workspace = true }
-sqlx = { workspace = true }
+chrono = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+sqlx = { workspace = true }
+tracing = { workspace = true }
 uuid = { workspace = true }
-chrono = { workspace = true }
-thiserror = { workspace = true }
-async-trait = { workspace = true }
-
-olymp-core = { path = "../olymp-core" }
-
-[dev-dependencies]
-testcontainers = { workspace = true }
-testcontainers-modules = { workspace = true }
+utoipa = { workspace = true }

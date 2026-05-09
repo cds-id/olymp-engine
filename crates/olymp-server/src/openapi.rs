@@ -50,6 +50,15 @@ use olymp_auth::notifications::UpdateNotificationPreferences;
         olymp_participant::handlers::approve_participant,
         olymp_participant::handlers::reject_participant,
         olymp_participant::handlers::list_stage_participants,
+        // Ranking
+        olymp_ranking::handlers::get_ranking_rule,
+        olymp_ranking::handlers::upsert_ranking_rule,
+        olymp_ranking::handlers::calculate_ranking,
+        olymp_ranking::handlers::get_ranking,
+        olymp_ranking::handlers::review_ranking,
+        olymp_ranking::handlers::approve_ranking,
+        olymp_ranking::handlers::publish_ranking,
+        olymp_ranking::handlers::promote,
         // Monitoring
         olymp_monitoring::handlers::create_cheating_log,
         olymp_monitoring::handlers::list_cheating_logs,
@@ -164,6 +173,16 @@ use olymp_auth::notifications::UpdateNotificationPreferences;
             olymp_monitoring::models::CreateAuditLogRequest,
             olymp_monitoring::models::AuditLogQuery,
             olymp_monitoring::models::MonitorEvent,
+            // Ranking
+            olymp_ranking::models::RankingRule,
+            olymp_ranking::models::RankingResult,
+            olymp_ranking::models::RankingEntry,
+            olymp_ranking::models::RankingResultWithEntries,
+            olymp_ranking::models::CreateRankingRuleRequest,
+            olymp_ranking::models::UpdateRankingRuleRequest,
+            olymp_ranking::models::ReviewRequest,
+            olymp_ranking::models::ApproveRequest,
+            olymp_ranking::models::PromotionResult,
         )
     ),
     tags(
