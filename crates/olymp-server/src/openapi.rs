@@ -50,6 +50,14 @@ use olymp_auth::notifications::UpdateNotificationPreferences;
         olymp_participant::handlers::approve_participant,
         olymp_participant::handlers::reject_participant,
         olymp_participant::handlers::list_stage_participants,
+        // Monitoring
+        olymp_monitoring::handlers::create_cheating_log,
+        olymp_monitoring::handlers::list_cheating_logs,
+        olymp_monitoring::handlers::update_progress,
+        olymp_monitoring::handlers::get_progress,
+        olymp_monitoring::handlers::list_exam_progress,
+        olymp_monitoring::handlers::query_audit_logs,
+        olymp_monitoring::handlers::monitor_stream,
         // Exams
         olymp_exam::handlers::list_exams,
         olymp_exam::handlers::create_exam,
@@ -147,6 +155,15 @@ use olymp_auth::notifications::UpdateNotificationPreferences;
             olymp_exam::models::BatchSubmitAnswersRequest,
             olymp_exam::models::SessionStartResponse,
             olymp_exam::models::ScoreResult,
+            // Monitoring
+            olymp_monitoring::models::CheatingLog,
+            olymp_monitoring::models::ExamProgress,
+            olymp_monitoring::models::AuditLog,
+            olymp_monitoring::models::CreateCheatingLogRequest,
+            olymp_monitoring::models::UpdateProgressRequest,
+            olymp_monitoring::models::CreateAuditLogRequest,
+            olymp_monitoring::models::AuditLogQuery,
+            olymp_monitoring::models::MonitorEvent,
         )
     ),
     tags(

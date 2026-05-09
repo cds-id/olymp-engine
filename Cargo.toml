@@ -24,6 +24,7 @@ license = "MIT"
 [workspace.dependencies]
 # Async runtime
 tokio = { version = "1", features = ["full"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
 
 # Web framework
 axum = { version = "0.8", features = ["macros", "multipart"] }

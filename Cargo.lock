@@ -2005,17 +2005,16 @@ dependencies = [
 name = "olymp-monitoring"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "axum",
  "chrono",
  "olymp-core",
  "serde",
  "serde_json",
  "sqlx",
- "testcontainers",
- "testcontainers-modules",
- "thiserror",
  "tokio",
+ "tokio-stream",
+ "tracing",
+ "utoipa",
  "uuid",
 ]
 
@@ -3770,6 +3769,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]

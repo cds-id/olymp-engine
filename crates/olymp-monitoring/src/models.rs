@@ -1,25 +1,81 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use sqlx::FromRow;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AuditLog {
+// ─── DB Models ───
+
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct CheatingLog {
     pub id: Uuid,
-    pub entity_type: String,
-    pub entity_id: Uuid,
-    pub action: String,
-    pub actor_id: Option<Uuid>,
-    pub changes: Option<Value>,
-    pub created_at: DateTime<Utc>,
+    pub exam_session_id: Uuid,
+    pub event_type: String,
+    pub detail: Option<serde_json::Value>,
+    pub occurred_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct ExamProgress {
     pub id: Uuid,
     pub exam_session_id: Uuid,
-    pub participant_id: Uuid,
     pub questions_answered: i32,
     pub total_questions: i32,
     pub last_activity: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct AuditLog {
+    pub id: Uuid,
+    pub actor_id: Option<Uuid>,
+    pub action: String,
+    pub resource_type: String,
+    pub resource_id: Option<Uuid>,
+    pub event_id: Option<Uuid>,
+    pub metadata: Option<serde_json::Value>,
+    pub ip_address: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+// ─── Request DTOs ───
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct CreateCheatingLogRequest {
+    pub exam_session_id: Uuid,
+    pub event_type: String,
+    pub detail: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct UpdateProgressRequest {
+    pub questions_answered: i32,
+    pub total_questions: i32,
+}
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct CreateAuditLogRequest {
+    pub action: String,
+    pub resource_type: String,
+    pub resource_id: Option<Uuid>,
+    pub event_id: Option<Uuid>,
+    pub metadata: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct AuditLogQuery {
+    pub actor_id: Option<Uuid>,
+    pub resource_type: Option<String>,
+    pub resource_id: Option<Uuid>,
+    pub event_id: Option<Uuid>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+// ─── SSE Event ───
+
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct MonitorEvent {
+    pub event_type: String,
+    pub exam_session_id: Uuid,
+    pub data: serde_json::Value,
+    pub timestamp: DateTime<Utc>,
 }

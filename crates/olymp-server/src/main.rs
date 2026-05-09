@@ -132,7 +132,22 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/sessions/{session_id}/submit", axum::routing::post(olymp_exam::handlers::submit_session))
         .with_state(db_pool.clone());
 
-    app = app.merge(region_routes).merge(event_routes).merge(rbac_routes).merge(participant_routes).merge(exam_routes);
+    // Monitoring routes (State<MonitoringState>)
+    let (monitor_tx, _) = tokio::sync::broadcast::channel::<olymp_monitoring::models::MonitorEvent>(256);
+    let monitoring_state = olymp_monitoring::handlers::MonitoringState {
+        pool: db_pool.clone(),
+        tx: monitor_tx,
+    };
+    let monitoring_routes = axum::Router::new()
+        .route("/api/cheating-logs", axum::routing::post(olymp_monitoring::handlers::create_cheating_log))
+        .route("/api/sessions/{session_id}/cheating-logs", axum::routing::get(olymp_monitoring::handlers::list_cheating_logs))
+        .route("/api/sessions/{session_id}/progress", axum::routing::get(olymp_monitoring::handlers::get_progress).put(olymp_monitoring::handlers::update_progress))
+        .route("/api/exams/{exam_id}/progress", axum::routing::get(olymp_monitoring::handlers::list_exam_progress))
+        .route("/api/exams/{exam_id}/monitor/stream", axum::routing::get(olymp_monitoring::handlers::monitor_stream))
+        .route("/api/audit-logs", axum::routing::get(olymp_monitoring::handlers::query_audit_logs))
+        .with_state(monitoring_state);
+
+    app = app.merge(region_routes).merge(event_routes).merge(rbac_routes).merge(participant_routes).merge(exam_routes).merge(monitoring_routes);
 
     // Add Swagger UI only in development
     if matches!(config.app.environment, olymp_core::config::Env::Dev) {
