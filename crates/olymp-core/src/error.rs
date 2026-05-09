@@ -12,8 +12,8 @@ pub enum AppError {
     #[error("Unauthorized")]
     Unauthorized,
 
-    #[error("Forbidden")]
-    Forbidden,
+    #[error("Forbidden: {0}")]
+    Forbidden(String),
 
     #[error("Conflict: {0}")]
     Conflict(String),
@@ -37,7 +37,7 @@ impl AppError {
             Self::NotFound(_) => StatusCode::NOT_FOUND,
             Self::BadRequest(_) | Self::Validation(_) => StatusCode::BAD_REQUEST,
             Self::Unauthorized => StatusCode::UNAUTHORIZED,
-            Self::Forbidden => StatusCode::FORBIDDEN,
+            Self::Forbidden(_) => StatusCode::FORBIDDEN,
             Self::Conflict(_) => StatusCode::CONFLICT,
             Self::Internal(_) | Self::Database(_) | Self::Redis(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -50,7 +50,7 @@ impl AppError {
             Self::NotFound(_) => "NOT_FOUND",
             Self::BadRequest(_) => "BAD_REQUEST",
             Self::Unauthorized => "UNAUTHORIZED",
-            Self::Forbidden => "FORBIDDEN",
+            Self::Forbidden(_) => "FORBIDDEN",
             Self::Conflict(_) => "CONFLICT",
             Self::Validation(_) => "VALIDATION_ERROR",
             Self::Internal(_) => "INTERNAL_ERROR",

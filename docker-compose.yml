@@ -15,6 +15,7 @@ services:
       - ./crates/olymp-auth/migrations:/migrations/auth
       - ./crates/olymp-region/migrations:/migrations/region
       - ./crates/olymp-event/migrations:/migrations/event
+      - ./crates/olymp-rbac/migrations:/migrations/rbac
       - ./crates/olymp-participant/migrations:/migrations/participant
       - ./crates/olymp-exam/migrations:/migrations/exam
       - ./crates/olymp-ranking/migrations:/migrations/ranking

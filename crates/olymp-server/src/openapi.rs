@@ -30,6 +30,17 @@ use olymp_auth::notifications::UpdateNotificationPreferences;
         olymp_region::handlers::create_province,
         olymp_region::handlers::list_districts,
         olymp_region::handlers::create_district,
+        // RBAC
+        olymp_rbac::handlers::list_roles,
+        olymp_rbac::handlers::create_role,
+        olymp_rbac::handlers::update_role,
+        olymp_rbac::handlers::list_permissions,
+        olymp_rbac::handlers::get_role_permissions,
+        olymp_rbac::handlers::assign_role_permissions,
+        olymp_rbac::handlers::list_assignments,
+        olymp_rbac::handlers::create_assignment,
+        olymp_rbac::handlers::update_assignment,
+        olymp_rbac::handlers::delete_assignment,
         // Events
         olymp_event::handlers::list_education_levels,
         olymp_event::handlers::create_education_level,
@@ -83,6 +94,15 @@ use olymp_auth::notifications::UpdateNotificationPreferences;
             olymp_core::types::Tier,
             olymp_core::types::EventStatus,
             olymp_core::types::StageStatus,
+            // RBAC
+            olymp_rbac::models::Role,
+            olymp_rbac::models::Permission,
+            olymp_rbac::models::UserRoleAssignment,
+            olymp_rbac::models::CreateRoleRequest,
+            olymp_rbac::models::UpdateRoleRequest,
+            olymp_rbac::models::AssignPermissionsRequest,
+            olymp_rbac::models::CreateAssignmentRequest,
+            olymp_rbac::models::UpdateAssignmentRequest,
         )
     ),
     tags(

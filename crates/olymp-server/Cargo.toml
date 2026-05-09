@@ -18,6 +18,7 @@ olymp-ranking = { path = "../olymp-ranking" }
 olymp-monitoring = { path = "../olymp-monitoring" }
 olymp-region = { path = "../olymp-region" }
 olymp-event = { path = "../olymp-event" }
+olymp-rbac = { path = "../olymp-rbac" }
 anyhow = { workspace = true }
 axum = { workspace = true }
 tokio = { workspace = true }

@@ -47,6 +47,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let db_pool = db.clone();
+    let redis_client = redis.clone();
 
     let state = AppState {
         db,
@@ -93,9 +94,23 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/events/{event_id}/stages", axum::routing::get(olymp_event::handlers::list_stages).post(olymp_event::handlers::create_stage))
         .route("/api/stages/{id}/status", axum::routing::put(olymp_event::handlers::update_stage_status))
         .route("/api/events/{event_id}/categories", axum::routing::get(olymp_event::handlers::list_event_categories).post(olymp_event::handlers::create_event_category))
-        .with_state(db_pool);
+        .with_state(db_pool.clone());
 
-    app = app.merge(region_routes).merge(event_routes);
+    // RBAC routes (State<RbacState>)
+    let rbac_state = olymp_rbac::handlers::RbacState {
+        pool: db_pool,
+        redis: redis_client,
+    };
+    let rbac_routes = axum::Router::new()
+        .route("/api/rbac/roles", axum::routing::get(olymp_rbac::handlers::list_roles).post(olymp_rbac::handlers::create_role))
+        .route("/api/rbac/roles/{role_id}", axum::routing::put(olymp_rbac::handlers::update_role))
+        .route("/api/rbac/permissions", axum::routing::get(olymp_rbac::handlers::list_permissions))
+        .route("/api/rbac/roles/{role_id}/permissions", axum::routing::get(olymp_rbac::handlers::get_role_permissions).post(olymp_rbac::handlers::assign_role_permissions))
+        .route("/api/rbac/assignments", axum::routing::get(olymp_rbac::handlers::list_assignments).post(olymp_rbac::handlers::create_assignment))
+        .route("/api/rbac/assignments/{id}", axum::routing::put(olymp_rbac::handlers::update_assignment).delete(olymp_rbac::handlers::delete_assignment))
+        .with_state(rbac_state);
+
+    app = app.merge(region_routes).merge(event_routes).merge(rbac_routes);
 
     // Add Swagger UI only in development
     if matches!(config.app.environment, olymp_core::config::Env::Dev) {

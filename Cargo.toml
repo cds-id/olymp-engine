@@ -12,6 +12,7 @@ members = [
     "crates/olymp-monitoring",
     "crates/olymp-region",
     "crates/olymp-event",
+    "crates/olymp-rbac",
 ]
 
 [workspace.package]

@@ -10,7 +10,6 @@ pub struct UserProfile {
     pub username: Option<String>,
     pub name: Option<String>,
     pub phone: Option<String>,
-    pub is_admin: bool,
     pub auth_method: Option<String>,
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -63,7 +62,7 @@ impl UserService {
 
     pub async fn get_full_by_id(&self, user_id: Uuid) -> Result<Option<UserProfile>, AppError> {
         sqlx::query_as::<_, UserProfile>(
-            "SELECT id, email, username, name, phone, is_admin, auth_method, created_at, updated_at
+            "SELECT id, email, username, name, phone, auth_method, created_at, updated_at
              FROM auth.users WHERE id = $1"
         )
         .bind(user_id)

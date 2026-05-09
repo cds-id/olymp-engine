@@ -2088,6 +2088,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "olymp-rbac"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "olymp-core",
+ "redis",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tracing",
+ "utoipa",
+ "uuid",
+]
+
+[[package]]
 name = "olymp-region"
 version = "0.1.0"
 dependencies = [
@@ -2118,6 +2134,7 @@ dependencies = [
  "olymp-notification",
  "olymp-participant",
  "olymp-ranking",
+ "olymp-rbac",
  "olymp-region",
  "olymp-worker",
  "redis",
