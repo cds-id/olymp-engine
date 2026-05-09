@@ -1,0 +1,33 @@
+[package]
+name = "blurp-auth"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+blurp-core = { path = "../blurp-core" }
+blurp-notification = { path = "../blurp-notification" }
+dotenvy = { workspace = true }
+axum = { workspace = true }
+axum-extra = { workspace = true }
+async-trait = { workspace = true }
+argon2 = { workspace = true }
+chrono = { workspace = true }
+jsonwebtoken = { workspace = true }
+redis = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+utoipa = { workspace = true }
+validator = { workspace = true }
+sha2 = "0.10"
+hex = "0.4"
+reqwest = { workspace = true }
+base64 = "0.22"
+rand = "0.8"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }

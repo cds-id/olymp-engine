@@ -1,0 +1,49 @@
+[app]
+name = "Blurp Engine"
+url = "http://localhost:3000"
+environment = "dev"
+
+[database]
+url = "postgres://blurp:blurp@localhost:5432/blurp"
+max_connections = 10
+
+[redis]
+url = "redis://localhost:6379"
+
+[auth]
+jwt_secret = "change-me-in-production"
+jwt_access_ttl_secs = 900
+jwt_refresh_ttl_secs = 604800
+magic_link_ttl_secs = 900
+cookie_secret = "change-me-in-production"
+rate_limit_per_email = 5
+rate_limit_per_ip = 20
+
+[payment]
+provider = "xendit"
+api_key = ""
+secret_key = ""
+webhook_secret = ""
+payment_expiry_secs = 900
+
+[shipping]
+provider = "rajaongkir"
+api_key = ""
+origin_district_id = 151
+
+[email]
+provider = "mailgun"
+api_key = ""
+from = "noreply@sorastore.com"
+domain = "mg.sorastore.com"
+
+[storage]
+endpoint = ""
+bucket = "blurp-media"
+access_key = ""
+secret_key = ""
+region = "auto"
+cdn_url = ""
+
+[server]
+bind_addr = "0.0.0.0:8080"

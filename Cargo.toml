@@ -1,0 +1,84 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/blurp-core",
+    "crates/blurp-auth",
+    "crates/blurp-worker",
+    "crates/blurp-notification",
+    "crates/blurp-server",
+    "crates/olymp-participant",
+    "crates/olymp-exam",
+    "crates/olymp-ranking",
+    "crates/olymp-monitoring",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Indra Gunanda <indra.gunanda@ciptadusa.com>"]
+license = "MIT"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Web framework
+axum = { version = "0.8", features = ["macros", "multipart"] }
+axum-extra = { version = "0.10", features = ["cookie", "typed-header"] }
+tower = { version = "0.5" }
+tower-http = { version = "0.6", features = ["cors", "compression-br", "compression-gzip", "trace", "timeout", "limit"] }
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "uuid", "chrono", "json", "migrate"] }
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Validation
+validator = { version = "0.19", features = ["derive"] }
+
+# OpenAPI
+utoipa = { version = "5", features = ["axum_extras", "chrono", "uuid"] }
+utoipa-swagger-ui = { version = "8", features = ["axum"] }
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Auth
+jsonwebtoken = "9"
+argon2 = "0.5"
+
+# Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Config
+config = "0.14"
+dotenvy = "0.15"
+
+# Time & ID
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+
+# HTTP client (for providers)
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+
+# S3
+aws-sdk-s3 = "1"
+aws-config = "1"
+
+# Cron/scheduler
+tokio-cron-scheduler = "0.13"
+
+# Async trait
+async-trait = "0.1"
+
+# Bytes
+bytes = "1"
+
+# Testing
+testcontainers = "0.23"
+testcontainers-modules = { version = "0.11", features = ["postgres", "redis"] }

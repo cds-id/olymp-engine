@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: olymp-postgres
+    environment:
+      POSTGRES_USER: olymp
+      POSTGRES_PASSWORD: olymp
+      POSTGRES_DB: olymp
+    ports:
+      - "5432:5432"
+    volumes:
+      - olymp_postgres_data:/var/lib/postgresql/data
+      - ./crates/blurp-auth/migrations:/migrations/auth
+      - ./crates/olymp-participant/migrations:/migrations/participant
+      - ./crates/olymp-exam/migrations:/migrations/exam
+      - ./crates/olymp-ranking/migrations:/migrations/ranking
+      - ./crates/olymp-monitoring/migrations:/migrations/monitoring
+      - ./logs:/var/log/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U olymp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - "postgres"
+      - "-c"
+      - "log_statement=all"
+      - "-c"
+      - "log_directory=/var/log/postgresql"
+
+  redis:
+    image: redis:7-alpine
+    container_name: olymp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - olymp_redis_data:/data
+      - ./logs:/var/log/redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes --logfile /var/log/redis/redis.log
+
+volumes:
+  olymp_postgres_data:
+  olymp_redis_data:

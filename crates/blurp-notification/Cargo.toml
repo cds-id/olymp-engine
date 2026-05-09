@@ -1,0 +1,25 @@
+[package]
+name = "blurp-notification"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+blurp-core = { path = "../blurp-core" }
+async-trait = { workspace = true }
+axum = { workspace = true }
+chrono = { workspace = true }
+dotenvy = { workspace = true }
+lettre = { version = "0.11", default-features = false, features = ["tokio1-rustls-tls", "smtp-transport", "builder"] }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+
+[[bin]]
+name = "test_email"
+path = "src/bin/test_email.rs"
