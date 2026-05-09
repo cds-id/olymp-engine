@@ -1,24 +1,38 @@
--- olymp-participant migrations
+-- olymp-participant: participants + participant_stages
+
 CREATE TABLE participants (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL UNIQUE,
-    current_tier TEXT NOT NULL CHECK (current_tier IN ('district', 'province', 'national')),
-    is_locked BOOLEAN NOT NULL DEFAULT false,
-    locked_by_account TEXT,
-    score FLOAT8 NOT NULL DEFAULT 0.0,
-    rank INTEGER,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    event_id UUID NOT NULL REFERENCES events(id),
+    education_level_id UUID NOT NULL REFERENCES education_levels(id),
+    subject_id UUID NOT NULL REFERENCES subjects(id),
+    school_name TEXT,
+    district_id UUID REFERENCES districts(id),
+    province_id UUID REFERENCES provinces(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(user_id, event_id, subject_id)
 );
 
-CREATE TABLE tier_progressions (
-    id UUID PRIMARY KEY,
+CREATE TABLE participant_stages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     participant_id UUID NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
-    from_tier TEXT NOT NULL,
-    to_tier TEXT NOT NULL,
-    advanced_at TIMESTAMPTZ NOT NULL
+    stage_id UUID NOT NULL REFERENCES stages(id),
+    status TEXT NOT NULL DEFAULT 'registered',
+    score FLOAT8,
+    completion_time_secs INT,
+    rank INT,
+    cheating_log_count INT NOT NULL DEFAULT 0,
+    promoted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(participant_id, stage_id)
 );
 
-CREATE INDEX idx_participants_user_id ON participants(user_id);
-CREATE INDEX idx_participants_tier ON participants(current_tier);
-CREATE INDEX idx_tier_progressions_participant ON tier_progressions(participant_id);
+CREATE INDEX idx_participants_user ON participants(user_id);
+CREATE INDEX idx_participants_event ON participants(event_id);
+CREATE INDEX idx_participants_district ON participants(district_id);
+CREATE INDEX idx_participants_province ON participants(province_id);
+CREATE INDEX idx_ps_participant ON participant_stages(participant_id);
+CREATE INDEX idx_ps_stage ON participant_stages(stage_id);
+CREATE INDEX idx_ps_status ON participant_stages(status);

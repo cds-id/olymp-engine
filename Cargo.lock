@@ -2047,26 +2047,15 @@ dependencies = [
 name = "olymp-participant"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "async-trait",
  "axum",
  "chrono",
  "olymp-core",
- "redis",
  "serde",
  "serde_json",
  "sqlx",
- "testcontainers",
- "testcontainers-modules",
- "thiserror",
- "tokio",
- "tower",
- "tower-http",
  "tracing",
- "tracing-subscriber",
  "utoipa",
  "uuid",
- "validator",
 ]
 
 [[package]]

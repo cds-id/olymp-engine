@@ -41,6 +41,15 @@ use olymp_auth::notifications::UpdateNotificationPreferences;
         olymp_rbac::handlers::create_assignment,
         olymp_rbac::handlers::update_assignment,
         olymp_rbac::handlers::delete_assignment,
+        // Participants
+        olymp_participant::handlers::list_event_participants,
+        olymp_participant::handlers::register_participant,
+        olymp_participant::handlers::get_participant,
+        olymp_participant::handlers::update_participant,
+        olymp_participant::handlers::verify_participant,
+        olymp_participant::handlers::approve_participant,
+        olymp_participant::handlers::reject_participant,
+        olymp_participant::handlers::list_stage_participants,
         // Events
         olymp_event::handlers::list_education_levels,
         olymp_event::handlers::create_education_level,
@@ -103,6 +112,14 @@ use olymp_auth::notifications::UpdateNotificationPreferences;
             olymp_rbac::models::AssignPermissionsRequest,
             olymp_rbac::models::CreateAssignmentRequest,
             olymp_rbac::models::UpdateAssignmentRequest,
+            // Participants
+            olymp_participant::models::Participant,
+            olymp_participant::models::ParticipantStage,
+            olymp_participant::models::ParticipantDetail,
+            olymp_participant::models::ParticipantListItem,
+            olymp_participant::models::RegisterParticipantRequest,
+            olymp_participant::models::UpdateParticipantRequest,
+            olymp_participant::models::VerifyRejectRequest,
         )
     ),
     tags(

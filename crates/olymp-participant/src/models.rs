@@ -3,66 +3,99 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "TEXT")]
-pub enum Tier {
-    #[serde(rename = "district")]
-    District,
-    #[serde(rename = "province")]
-    Province,
-    #[serde(rename = "national")]
-    National,
-}
+// ─── DB Models ───
 
-impl std::fmt::Display for Tier {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Tier::District => write!(f, "district"),
-            Tier::Province => write!(f, "province"),
-            Tier::National => write!(f, "national"),
-        }
-    }
-}
-
-#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Participant {
     pub id: Uuid,
     pub user_id: Uuid,
-    pub current_tier: String,
-    pub is_locked: bool,
-    pub locked_by_account: Option<String>,
-    pub score: f64,
-    pub rank: Option<i32>,
+    pub event_id: Uuid,
+    pub education_level_id: Uuid,
+    pub subject_id: Uuid,
+    pub school_name: Option<String>,
+    pub district_id: Option<Uuid>,
+    pub province_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
-pub struct TierProgression {
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct ParticipantStage {
     pub id: Uuid,
     pub participant_id: Uuid,
-    pub from_tier: String,
-    pub to_tier: String,
-    pub advanced_at: DateTime<Utc>,
+    pub stage_id: Uuid,
+    pub status: String,
+    pub score: Option<f64>,
+    pub completion_time_secs: Option<i32>,
+    pub rank: Option<i32>,
+    pub cheating_log_count: i32,
+    pub promoted_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+// ─── Request DTOs ───
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct RegisterParticipantRequest {
-    pub tier: String,
-    pub school: Option<String>,
-    pub region: Option<String>,
+    pub user_id: Uuid,
+    pub education_level_id: Uuid,
+    pub subject_id: Uuid,
+    pub school_name: Option<String>,
+    pub district_id: Option<Uuid>,
+    pub province_id: Option<Uuid>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ParticipantResponse {
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct UpdateParticipantRequest {
+    pub school_name: Option<String>,
+    pub district_id: Option<Uuid>,
+    pub province_id: Option<Uuid>,
+}
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct VerifyRejectRequest {
+    pub reason: Option<String>,
+}
+
+// ─── Response DTOs ───
+
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct ParticipantDetail {
+    #[serde(flatten)]
+    pub participant: Participant,
+    pub stages: Vec<ParticipantStage>,
+}
+
+#[derive(Debug, FromRow, Serialize, utoipa::ToSchema)]
+pub struct ParticipantListItem {
     pub id: Uuid,
-    pub current_tier: String,
-    pub is_locked: bool,
-    pub score: f64,
+    pub user_id: Uuid,
+    pub school_name: Option<String>,
+    pub district_id: Option<Uuid>,
+    pub province_id: Option<Uuid>,
+    pub stage_status: Option<String>,
+    pub score: Option<f64>,
     pub rank: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AdvanceTierRequest {
-    pub to_tier: String,
+/// Valid status transitions for participant stages
+impl ParticipantStage {
+    pub fn valid_transitions(status: &str) -> &'static [&'static str] {
+        match status {
+            "registered" => &["verified", "disqualified"],
+            "verified" => &["assigned_to_exam", "disqualified"],
+            "assigned_to_exam" => &["in_progress", "disqualified"],
+            "in_progress" => &["submitted", "disqualified"],
+            "submitted" => &["scored", "disqualified"],
+            "scored" => &["ranked", "disqualified"],
+            "ranked" => &["qualified", "not_qualified", "winner", "finalist", "disqualified"],
+            "qualified" => &["disqualified"],
+            _ => &[],
+        }
+    }
+
+    pub fn can_transition_to(&self, new_status: &str) -> bool {
+        Self::valid_transitions(&self.status).contains(&new_status)
+    }
 }

@@ -98,7 +98,7 @@ async fn main() -> anyhow::Result<()> {
 
     // RBAC routes (State<RbacState>)
     let rbac_state = olymp_rbac::handlers::RbacState {
-        pool: db_pool,
+        pool: db_pool.clone(),
         redis: redis_client,
     };
     let rbac_routes = axum::Router::new()
@@ -110,7 +110,17 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/rbac/assignments/{id}", axum::routing::put(olymp_rbac::handlers::update_assignment).delete(olymp_rbac::handlers::delete_assignment))
         .with_state(rbac_state);
 
-    app = app.merge(region_routes).merge(event_routes).merge(rbac_routes);
+    // Participant routes (State<PgPool>)
+    let participant_routes = axum::Router::new()
+        .route("/api/events/{event_id}/participants", axum::routing::get(olymp_participant::handlers::list_event_participants).post(olymp_participant::handlers::register_participant))
+        .route("/api/participants/{id}", axum::routing::get(olymp_participant::handlers::get_participant).put(olymp_participant::handlers::update_participant))
+        .route("/api/participants/{id}/verify", axum::routing::post(olymp_participant::handlers::verify_participant))
+        .route("/api/participants/{id}/approve", axum::routing::post(olymp_participant::handlers::approve_participant))
+        .route("/api/participants/{id}/reject", axum::routing::post(olymp_participant::handlers::reject_participant))
+        .route("/api/stages/{stage_id}/participants", axum::routing::get(olymp_participant::handlers::list_stage_participants))
+        .with_state(db_pool.clone());
+
+    app = app.merge(region_routes).merge(event_routes).merge(rbac_routes).merge(participant_routes);
 
     // Add Swagger UI only in development
     if matches!(config.app.environment, olymp_core::config::Env::Dev) {
