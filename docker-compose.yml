@@ -20,6 +20,7 @@ services:
       - ./crates/olymp-exam/migrations:/migrations/exam
       - ./crates/olymp-ranking/migrations:/migrations/ranking
       - ./crates/olymp-monitoring/migrations:/migrations/monitoring
+      - ./crates/olymp-certificate/migrations:/migrations/certificate
       - ./logs:/var/log/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U olymp"]
