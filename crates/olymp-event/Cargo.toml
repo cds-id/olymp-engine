@@ -13,3 +13,9 @@ sqlx = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
 utoipa = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+olymp-participant = { path = "../olymp-participant" }
+olymp-exam = { path = "../olymp-exam" }
+uuid = { workspace = true }
