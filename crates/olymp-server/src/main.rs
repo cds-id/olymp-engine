@@ -120,7 +120,19 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/stages/{stage_id}/participants", axum::routing::get(olymp_participant::handlers::list_stage_participants))
         .with_state(db_pool.clone());
 
-    app = app.merge(region_routes).merge(event_routes).merge(rbac_routes).merge(participant_routes);
+    // Exam routes (State<PgPool>)
+    let exam_routes = axum::Router::new()
+        .route("/api/stages/{stage_id}/exams", axum::routing::get(olymp_exam::handlers::list_exams).post(olymp_exam::handlers::create_exam))
+        .route("/api/exams/{exam_id}", axum::routing::get(olymp_exam::handlers::get_exam).put(olymp_exam::handlers::update_exam))
+        .route("/api/exams/{exam_id}/questions", axum::routing::get(olymp_exam::handlers::list_questions).post(olymp_exam::handlers::create_question))
+        .route("/api/exams/{exam_id}/sessions", axum::routing::post(olymp_exam::handlers::assign_session))
+        .route("/api/sessions/{session_id}", axum::routing::get(olymp_exam::handlers::get_session))
+        .route("/api/sessions/{session_id}/start", axum::routing::post(olymp_exam::handlers::start_session))
+        .route("/api/sessions/{session_id}/answers", axum::routing::get(olymp_exam::handlers::list_answers).post(olymp_exam::handlers::save_answer))
+        .route("/api/sessions/{session_id}/submit", axum::routing::post(olymp_exam::handlers::submit_session))
+        .with_state(db_pool.clone());
+
+    app = app.merge(region_routes).merge(event_routes).merge(rbac_routes).merge(participant_routes).merge(exam_routes);
 
     // Add Swagger UI only in development
     if matches!(config.app.environment, olymp_core::config::Env::Dev) {

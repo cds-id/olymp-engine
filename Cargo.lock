@@ -1990,17 +1990,14 @@ dependencies = [
 name = "olymp-exam"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "axum",
  "chrono",
  "olymp-core",
  "serde",
  "serde_json",
  "sqlx",
- "testcontainers",
- "testcontainers-modules",
- "thiserror",
- "tokio",
+ "tracing",
+ "utoipa",
  "uuid",
 ]
 
