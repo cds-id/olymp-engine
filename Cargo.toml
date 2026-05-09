@@ -1,15 +1,17 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/blurp-core",
-    "crates/blurp-auth",
-    "crates/blurp-worker",
-    "crates/blurp-notification",
-    "crates/blurp-server",
+    "crates/olymp-core",
+    "crates/olymp-auth",
+    "crates/olymp-worker",
+    "crates/olymp-notification",
+    "crates/olymp-server",
     "crates/olymp-participant",
     "crates/olymp-exam",
     "crates/olymp-ranking",
     "crates/olymp-monitoring",
+    "crates/olymp-region",
+    "crates/olymp-event",
 ]
 
 [workspace.package]

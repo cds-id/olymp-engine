@@ -24,7 +24,7 @@ chrono = { workspace = true }
 uuid = { workspace = true }
 async-trait = { workspace = true }
 
-blurp-core = { path = "../blurp-core" }
+olymp-core = { path = "../olymp-core" }
 
 [dev-dependencies]
 testcontainers = { workspace = true }

@@ -1,0 +1,15 @@
+[package]
+name = "olymp-event"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+olymp-core = { path = "../olymp-core" }
+axum = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+utoipa = { workspace = true }

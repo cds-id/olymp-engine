@@ -1,0 +1,41 @@
+[package]
+name = "olymp-server"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "olymp-server"
+path = "src/main.rs"
+
+[dependencies]
+olymp-core = { path = "../olymp-core" }
+olymp-auth = { path = "../olymp-auth" }
+olymp-notification = { path = "../olymp-notification" }
+olymp-worker = { path = "../olymp-worker" }
+olymp-participant = { path = "../olymp-participant" }
+olymp-exam = { path = "../olymp-exam" }
+olymp-ranking = { path = "../olymp-ranking" }
+olymp-monitoring = { path = "../olymp-monitoring" }
+olymp-region = { path = "../olymp-region" }
+olymp-event = { path = "../olymp-event" }
+anyhow = { workspace = true }
+axum = { workspace = true }
+tokio = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+sqlx = { workspace = true }
+redis = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+utoipa = { version = "5", features = ["axum_extras", "uuid", "chrono"] }
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
+
+[dev-dependencies]
+reqwest = { version = "0.12", features = ["json"] }
+tokio-test = "0.4"
+dotenvy = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }

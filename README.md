@@ -6,11 +6,11 @@ Rust backend for multi-tier Olympiad Learning Management System. Manages partici
 
 Cargo workspace with 9 crates:
 
-- **blurp-core** — Shared types, config, error handling, response envelope
-- **blurp-auth** — JWT + Redis revocation, user authentication
-- **blurp-notification** — Email/SMS notifications
-- **blurp-worker** — Background jobs (Redis ZSET delayed queue)
-- **blurp-server** — HTTP server, route composition
+- **olymp-core** — Shared types, config, error handling, response envelope
+- **olymp-auth** — JWT + Redis revocation, user authentication
+- **olymp-notification** — Email/SMS notifications
+- **olymp-worker** — Background jobs (Redis ZSET delayed queue)
+- **olymp-server** — HTTP server, route composition
 - **olymp-participant** — Registration, tier management, participant profiles
 - **olymp-exam** — Exam creation, question management, answer submission
 - **olymp-ranking** — Scoring, leaderboard, tier advancement
@@ -34,7 +34,7 @@ docker-compose up -d
 make migrate
 
 # Start server
-cargo run -p blurp-server
+cargo run -p olymp-server
 ```
 
 Server runs on `http://localhost:8080`
@@ -102,7 +102,7 @@ All responses use standard envelope: `{ "data": ..., "error": null/obj, "meta": 
 ## Database Schema
 
 Per-crate migrations:
-- `blurp-auth/migrations` — User authentication
+- `olymp-auth/migrations` — User authentication
 - `olymp-participant/migrations` — Participant data
 - `olymp-exam/migrations` — Exam & questions
 - `olymp-ranking/migrations` — Scores & rankings
@@ -135,8 +135,8 @@ OLYMP__EXAM__SESSION_TIMEOUT=120
 cargo test
 
 # E2E tests (server must be running)
-cargo run -p blurp-server &
-cargo test -p blurp-server -- --test-threads=1
+cargo run -p olymp-server &
+cargo test -p olymp-server -- --test-threads=1
 ```
 
 ## License

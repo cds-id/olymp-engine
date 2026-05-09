@@ -1,0 +1,18 @@
+[package]
+name = "olymp-worker"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+olymp-core = { path = "../olymp-core" }
+olymp-auth = { path = "../olymp-auth" }
+chrono = { workspace = true }
+redis = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tokio-cron-scheduler = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }

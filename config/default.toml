@@ -1,10 +1,10 @@
 [app]
-name = "Blurp Engine"
+name = "Olymp Engine"
 url = "http://localhost:3000"
 environment = "dev"
 
 [database]
-url = "postgres://blurp:blurp@localhost:5432/blurp"
+url = "postgres://olymp:olymp@localhost:5432/olymp"
 max_connections = 10
 
 [redis]
@@ -19,27 +19,15 @@ cookie_secret = "change-me-in-production"
 rate_limit_per_email = 5
 rate_limit_per_ip = 20
 
-[payment]
-provider = "xendit"
-api_key = ""
-secret_key = ""
-webhook_secret = ""
-payment_expiry_secs = 900
-
-[shipping]
-provider = "rajaongkir"
-api_key = ""
-origin_district_id = 151
-
 [email]
 provider = "mailgun"
 api_key = ""
-from = "noreply@sorastore.com"
-domain = "mg.sorastore.com"
+from = "noreply@olymp.id"
+domain = "mg.olymp.id"
 
 [storage]
 endpoint = ""
-bucket = "blurp-media"
+bucket = "olymp-media"
 access_key = ""
 secret_key = ""
 region = "auto"

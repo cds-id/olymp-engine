@@ -2,7 +2,7 @@ use sqlx::postgres::PgPoolOptions;
 
 #[tokio::main]
 async fn main() {
-    let url = "postgres://blurp:blurp@127.0.0.1:5433/blurp";
+    let url = "postgres://olymp:olymp@127.0.0.1:5433/olymp";
     println!("Connecting to: {}", url);
     match PgPoolOptions::new()
         .max_connections(1)

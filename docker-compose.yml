@@ -12,7 +12,9 @@ services:
       - "5432:5432"
     volumes:
       - olymp_postgres_data:/var/lib/postgresql/data
-      - ./crates/blurp-auth/migrations:/migrations/auth
+      - ./crates/olymp-auth/migrations:/migrations/auth
+      - ./crates/olymp-region/migrations:/migrations/region
+      - ./crates/olymp-event/migrations:/migrations/event
       - ./crates/olymp-participant/migrations:/migrations/participant
       - ./crates/olymp-exam/migrations:/migrations/exam
       - ./crates/olymp-ranking/migrations:/migrations/ranking
