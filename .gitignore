@@ -5,3 +5,4 @@
 .DS_Store
 .env.local
 docs/
+!docs/plans/
