@@ -158,7 +158,17 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/stages/{stage_id}/promote", axum::routing::post(olymp_ranking::handlers::promote))
         .with_state(db_pool.clone());
 
-    app = app.merge(region_routes).merge(event_routes).merge(rbac_routes).merge(participant_routes).merge(exam_routes).merge(monitoring_routes).merge(ranking_routes);
+    // Certificate routes (State<PgPool>)
+    let certificate_routes = axum::Router::new()
+        .route("/api/events/{event_id}/certificates/templates", axum::routing::get(olymp_certificate::handlers::list_templates).post(olymp_certificate::handlers::create_template))
+        .route("/api/certificates/templates/{template_id}", axum::routing::get(olymp_certificate::handlers::get_template).put(olymp_certificate::handlers::update_template))
+        .route("/api/stages/{stage_id}/certificates/generate", axum::routing::post(olymp_certificate::handlers::generate_certificates))
+        .route("/api/participants/{participant_id}/certificates", axum::routing::get(olymp_certificate::handlers::list_participant_certificates))
+        .route("/api/certificates/{certificate_id}", axum::routing::get(olymp_certificate::handlers::get_certificate))
+        .route("/api/events/{event_id}/finalize", axum::routing::post(olymp_certificate::handlers::finalize_event))
+        .with_state(db_pool.clone());
+
+    app = app.merge(region_routes).merge(event_routes).merge(rbac_routes).merge(participant_routes).merge(exam_routes).merge(monitoring_routes).merge(ranking_routes).merge(certificate_routes);
 
     // Add Swagger UI only in development
     if matches!(config.app.environment, olymp_core::config::Env::Dev) {

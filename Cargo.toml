@@ -13,6 +13,7 @@ members = [
     "crates/olymp-region",
     "crates/olymp-event",
     "crates/olymp-rbac",
+    "crates/olymp-certificate",
 ]
 
 [workspace.package]

@@ -50,6 +50,15 @@ use olymp_auth::notifications::UpdateNotificationPreferences;
         olymp_participant::handlers::approve_participant,
         olymp_participant::handlers::reject_participant,
         olymp_participant::handlers::list_stage_participants,
+        // Certificates
+        olymp_certificate::handlers::create_template,
+        olymp_certificate::handlers::list_templates,
+        olymp_certificate::handlers::get_template,
+        olymp_certificate::handlers::update_template,
+        olymp_certificate::handlers::generate_certificates,
+        olymp_certificate::handlers::list_participant_certificates,
+        olymp_certificate::handlers::get_certificate,
+        olymp_certificate::handlers::finalize_event,
         // Ranking
         olymp_ranking::handlers::get_ranking_rule,
         olymp_ranking::handlers::upsert_ranking_rule,
@@ -183,6 +192,13 @@ use olymp_auth::notifications::UpdateNotificationPreferences;
             olymp_ranking::models::ReviewRequest,
             olymp_ranking::models::ApproveRequest,
             olymp_ranking::models::PromotionResult,
+            // Certificates
+            olymp_certificate::models::CertificateTemplate,
+            olymp_certificate::models::Certificate,
+            olymp_certificate::models::CreateTemplateRequest,
+            olymp_certificate::models::UpdateTemplateRequest,
+            olymp_certificate::models::GenerateCertificatesRequest,
+            olymp_certificate::models::GenerationResult,
         )
     ),
     tags(

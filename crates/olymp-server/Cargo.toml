@@ -15,6 +15,7 @@ olymp-worker = { path = "../olymp-worker" }
 olymp-participant = { path = "../olymp-participant" }
 olymp-exam = { path = "../olymp-exam" }
 olymp-ranking = { path = "../olymp-ranking" }
+olymp-certificate = { path = "../olymp-certificate" }
 olymp-monitoring = { path = "../olymp-monitoring" }
 olymp-region = { path = "../olymp-region" }
 olymp-event = { path = "../olymp-event" }

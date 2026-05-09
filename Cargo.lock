@@ -1783,6 +1783,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "olymp-certificate"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "olymp-core",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tracing",
+ "utoipa",
+ "uuid",
+]
+
+[[package]]
 name = "olymp-core"
 version = "0.1.0"
 dependencies = [
@@ -1944,6 +1959,7 @@ dependencies = [
  "chrono",
  "dotenvy",
  "olymp-auth",
+ "olymp-certificate",
  "olymp-core",
  "olymp-event",
  "olymp-exam",
