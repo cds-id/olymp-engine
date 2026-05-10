@@ -39,15 +39,29 @@ impl UserService {
         }
 
         let new_id = Uuid::now_v7();
+        let mut tx = self.pool.begin().await.map_err(AppError::Database)?;
+
         sqlx::query(
             "INSERT INTO auth.users (id, email, name, is_guest) VALUES ($1, $2, $3, false)"
         )
         .bind(new_id)
         .bind(email)
         .bind(email.split('@').next().unwrap_or("User"))
-        .execute(&self.pool)
+        .execute(&mut *tx)
         .await
-        .map_err(|e| AppError::Database(e))?;
+        .map_err(AppError::Database)?;
+
+        sqlx::query(
+            "INSERT INTO user_role_assignments (user_id, role_id)
+             SELECT $1, id FROM roles WHERE name = 'peserta'
+             ON CONFLICT DO NOTHING"
+        )
+        .bind(new_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(AppError::Database)?;
+
+        tx.commit().await.map_err(AppError::Database)?;
 
         Ok(new_id)
     }

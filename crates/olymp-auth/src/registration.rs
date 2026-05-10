@@ -41,6 +41,8 @@ impl RegistrationService {
         let password_hash = PasswordService::hash_password(password)?;
         let user_id = Uuid::now_v7();
 
+        let mut tx = self.pool.begin().await.map_err(AppError::Database)?;
+
         sqlx::query(
             "INSERT INTO auth.users (id, email, username, password_hash, name, auth_method) 
              VALUES ($1, $2, $3, $4, $5, 'password')"
@@ -50,7 +52,7 @@ impl RegistrationService {
         .bind(username)
         .bind(&password_hash)
         .bind(name.unwrap_or(username))
-        .execute(&self.pool)
+        .execute(&mut *tx)
         .await
         .map_err(|e| {
             if e.to_string().contains("duplicate key") {
@@ -63,6 +65,18 @@ impl RegistrationService {
                 AppError::Database(e)
             }
         })?;
+
+        sqlx::query(
+            "INSERT INTO user_role_assignments (user_id, role_id)
+             SELECT $1, id FROM roles WHERE name = 'peserta'
+             ON CONFLICT DO NOTHING"
+        )
+        .bind(user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(AppError::Database)?;
+
+        tx.commit().await.map_err(AppError::Database)?;
 
         Ok(user_id)
     }

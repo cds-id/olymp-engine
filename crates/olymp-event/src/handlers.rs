@@ -277,7 +277,7 @@ pub async fn list_available_stages(
     Path(event_id): Path<Uuid>,
     Query(filters): Query<AvailableStageFilters>,
 ) -> Response {
-    if let Err(e) = auth.require("event.view") {
+    if let Err(e) = auth.require("exam.view") {
         return e.into_response();
     }
     match EventRepository::list_available_stages(&pool, event_id, &filters).await {
