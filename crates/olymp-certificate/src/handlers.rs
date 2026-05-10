@@ -164,6 +164,27 @@ pub async fn list_participant_certificates(
     if let Err(e) = auth.require("certificate.view") {
         return e.into_response();
     }
+    // Ownership: peserta can only view own certificates
+    if !auth.is_staff() {
+        let owner = sqlx::query_scalar::<_, uuid::Uuid>(
+            "SELECT user_id FROM participants WHERE id = $1",
+        )
+        .bind(participant_id)
+        .fetch_optional(&pool)
+        .await;
+        match owner {
+            Ok(Some(uid)) if uid == auth.user_id => {}
+            Ok(Some(_)) => {
+                return olymp_core::AppError::NotFound("Participant not found".into())
+                    .into_response();
+            }
+            Ok(None) => {
+                return olymp_core::AppError::NotFound("Participant not found".into())
+                    .into_response();
+            }
+            Err(e) => return olymp_core::AppError::Database(e).into_response(),
+        }
+    }
     match CertificateRepository::list_by_participant(&pool, participant_id).await {
         Ok(list) => ApiResponse::success(list).into_response(),
         Err(e) => e.into_response(),
@@ -189,7 +210,27 @@ pub async fn get_certificate(
         return e.into_response();
     }
     match CertificateRepository::get_certificate(&pool, certificate_id).await {
-        Ok(Some(c)) => ApiResponse::success(c).into_response(),
+        Ok(Some(c)) => {
+            // Ownership: peserta can only view own certificates
+            if !auth.is_staff() {
+                let owner = sqlx::query_scalar::<_, uuid::Uuid>(
+                    "SELECT p.user_id FROM participants p
+                     JOIN participant_stages ps ON ps.participant_id = p.id
+                     WHERE ps.id = $1",
+                )
+                .bind(c.participant_stage_id)
+                .fetch_optional(&pool)
+                .await;
+                match owner {
+                    Ok(Some(uid)) if uid == auth.user_id => {}
+                    _ => {
+                        return olymp_core::AppError::NotFound("Certificate not found".into())
+                            .into_response();
+                    }
+                }
+            }
+            ApiResponse::success(c).into_response()
+        }
         Ok(None) => {
             olymp_core::AppError::NotFound("Certificate not found".into()).into_response()
         }

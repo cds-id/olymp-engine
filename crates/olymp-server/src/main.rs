@@ -135,6 +135,8 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/exams/{exam_id}", axum::routing::get(olymp_exam::handlers::get_exam).put(olymp_exam::handlers::update_exam))
         .route("/api/exams/{exam_id}/questions", axum::routing::get(olymp_exam::handlers::list_questions).post(olymp_exam::handlers::create_question))
         .route("/api/exams/{exam_id}/questions/{question_id}", axum::routing::put(olymp_exam::handlers::update_question).delete(olymp_exam::handlers::delete_question))
+        .route("/api/answers/{answer_id}/grade", axum::routing::put(olymp_exam::handlers::grade_answer))
+        .route("/api/sessions/{session_id}/finalize-grading", axum::routing::post(olymp_exam::handlers::finalize_grading))
         .route("/api/exams/{exam_id}/sessions", axum::routing::post(olymp_exam::handlers::assign_session))
         .route("/api/sessions/{session_id}", axum::routing::get(olymp_exam::handlers::get_session))
         .route("/api/sessions/{session_id}/start", axum::routing::post(olymp_exam::handlers::start_session))

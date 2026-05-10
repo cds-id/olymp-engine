@@ -271,6 +271,58 @@ pub async fn delete_question(
     }
 }
 
+// ─── Manual Grading (admin) ───
+
+#[utoipa::path(
+    put,
+    path = "/api/answers/{answer_id}/grade",
+    tag = "exam-grading",
+    params(("answer_id" = Uuid, Path, description = "Answer ID")),
+    request_body = GradeAnswerRequest,
+    responses(
+        (status = 200, description = "Answer graded", body = inline(ApiResponse<Answer>)),
+        (status = 404, description = "Not found")
+    )
+)]
+pub async fn grade_answer(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+    Path(answer_id): Path<Uuid>,
+    Json(req): Json<GradeAnswerRequest>,
+) -> Response {
+    if let Err(e) = auth.require("exam.grade") {
+        return e.into_response();
+    }
+    match ExamRepository::grade_answer(&pool, answer_id, &req).await {
+        Ok(answer) => ApiResponse::success(answer).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/sessions/{session_id}/finalize-grading",
+    tag = "exam-grading",
+    params(("session_id" = Uuid, Path, description = "Session ID")),
+    responses(
+        (status = 200, description = "Grading finalized, score recalculated", body = inline(ApiResponse<ScoreResult>)),
+        (status = 400, description = "Cannot finalize")
+    )
+)]
+pub async fn finalize_grading(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+    Path(session_id): Path<Uuid>,
+) -> Response {
+    if let Err(e) = auth.require("exam.grade") {
+        return e.into_response();
+    }
+    match ExamRepository::finalize_grading(&pool, session_id).await {
+        Ok(result) => ApiResponse::success(result).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 // ─── Sessions ───
 
 /// Helper: verify peserta owns session, staff can access any

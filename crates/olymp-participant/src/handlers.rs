@@ -106,7 +106,7 @@ pub async fn register_participant(
         }
     }
 
-    match ParticipantRepository::register(&pool, event_id, &req).await {
+    match ParticipantRepository::register(&pool, event_id, auth.user_id, &req).await {
         Ok(participant) => {
             WithStatus(StatusCode::CREATED, ApiResponse::success(participant)).into_response()
         }
@@ -137,10 +137,15 @@ pub async fn get_participant(
     let participant = match ParticipantRepository::get_by_id(&pool, id).await {
         Ok(Some(p)) => p,
         Ok(None) => {
-            return olymp_core::AppError::NotFound("Participant not found".into()).into_response()
+            return AppError::NotFound("Participant not found".into()).into_response()
         }
         Err(e) => return e.into_response(),
     };
+
+    // Ownership: peserta can only view own participant record
+    if !auth.is_staff() && participant.user_id != auth.user_id {
+        return AppError::NotFound("Participant not found".into()).into_response();
+    }
 
     let stages = match ParticipantRepository::get_participant_stages(&pool, id).await {
         Ok(s) => s,

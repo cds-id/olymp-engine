@@ -66,15 +66,7 @@ pub struct UpdateRankingRuleRequest {
     pub tiebreaker_order: Option<Vec<String>>,
 }
 
-#[derive(Debug, Deserialize, utoipa::ToSchema)]
-pub struct ReviewRequest {
-    pub actor_id: Uuid,
-}
-
-#[derive(Debug, Deserialize, utoipa::ToSchema)]
-pub struct ApproveRequest {
-    pub actor_id: Uuid,
-}
+// ReviewRequest and ApproveRequest removed — use auth.user_id instead
 
 // ─── Response DTOs ───
 

@@ -263,20 +263,24 @@ pub async fn create_stage(
     get,
     path = "/api/events/{event_id}/stages/available",
     tag = "events",
-    params(("event_id" = Uuid, Path, description = "Event ID")),
+    params(
+        ("event_id" = Uuid, Path, description = "Event ID"),
+        AvailableStageFilters,
+    ),
     responses(
-        (status = 200, description = "Stages open for registration", body = inline(ApiResponse<Vec<Stage>>)),
+        (status = 200, description = "Stages open for registration with enrollment counts", body = inline(ApiResponse<Vec<StageWithEnrollment>>)),
     )
 )]
 pub async fn list_available_stages(
     auth: AuthContext,
     State(pool): State<PgPool>,
     Path(event_id): Path<Uuid>,
+    Query(filters): Query<AvailableStageFilters>,
 ) -> Response {
     if let Err(e) = auth.require("event.view") {
         return e.into_response();
     }
-    match EventRepository::list_available_stages(&pool, event_id).await {
+    match EventRepository::list_available_stages(&pool, event_id, &filters).await {
         Ok(stages) => ApiResponse::success(stages).into_response(),
         Err(e) => e.into_response(),
     }

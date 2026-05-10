@@ -234,18 +234,28 @@ impl EventRepository {
         .map_err(AppError::Database)
     }
 
-    /// List stages open for registration (peserta-facing)
+    /// List stages open for registration with enrollment counts (peserta-facing)
     pub async fn list_available_stages(
         pool: &PgPool,
         event_id: Uuid,
-    ) -> Result<Vec<Stage>, AppError> {
-        sqlx::query_as::<_, Stage>(
-            "SELECT * FROM stages WHERE event_id = $1
-               AND (registration_opens_at IS NULL OR registration_opens_at <= now())
-               AND (registration_closes_at IS NULL OR registration_closes_at >= now())
-             ORDER BY sequence, name",
+        filters: &AvailableStageFilters,
+    ) -> Result<Vec<StageWithEnrollment>, AppError> {
+        sqlx::query_as::<_, StageWithEnrollment>(
+            "SELECT s.*,
+                    COALESCE((SELECT COUNT(*) FROM participant_stages ps WHERE ps.stage_id = s.id), 0) AS enrolled_count
+             FROM stages s
+             WHERE s.event_id = $1
+               AND (s.registration_opens_at IS NULL OR s.registration_opens_at <= now())
+               AND (s.registration_closes_at IS NULL OR s.registration_closes_at >= now())
+               AND ($2::TEXT IS NULL OR s.tier = $2)
+               AND ($3::UUID IS NULL OR s.province_id = $3)
+               AND ($4::UUID IS NULL OR s.district_id = $4)
+             ORDER BY s.sequence, s.name",
         )
         .bind(event_id)
+        .bind(&filters.tier)
+        .bind(filters.province_id)
+        .bind(filters.district_id)
         .fetch_all(pool)
         .await
         .map_err(AppError::Database)

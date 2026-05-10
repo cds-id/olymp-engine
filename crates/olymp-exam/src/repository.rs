@@ -140,6 +140,105 @@ impl ExamRepository {
         .map_err(AppError::Database)
     }
 
+    /// Grade an individual answer (admin manual grading for essays)
+    pub async fn grade_answer(
+        pool: &PgPool,
+        answer_id: Uuid,
+        req: &GradeAnswerRequest,
+    ) -> Result<Answer, AppError> {
+        sqlx::query_as::<_, Answer>(
+            "UPDATE answers SET points_earned = $2, feedback = $3, is_correct = $4
+             WHERE id = $1 RETURNING *",
+        )
+        .bind(answer_id)
+        .bind(req.points_earned)
+        .bind(&req.feedback)
+        .bind(req.points_earned > 0.0)
+        .fetch_optional(pool)
+        .await
+        .map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("Answer not found".into()))
+    }
+
+    /// Finalize grading for a session — recalculate total score from all answers,
+    /// move status from needs_grading to scored.
+    pub async fn finalize_grading(
+        pool: &PgPool,
+        session_id: Uuid,
+    ) -> Result<ScoreResult, AppError> {
+        let session = Self::get_session(pool, session_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Session not found".into()))?;
+
+        if session.status != "needs_grading" && session.status != "scored" {
+            return Err(AppError::BadRequest(format!(
+                "Cannot finalize grading for session in '{}' status",
+                session.status
+            )));
+        }
+
+        let questions = Self::list_questions(pool, session.exam_id).await?;
+        let answers = Self::list_answers(pool, session_id).await?;
+
+        let max_score: f64 = questions.iter().map(|q| q.points).sum();
+        let mut total_score: f64 = 0.0;
+        let mut correct_count: i32 = 0;
+        let mut has_ungraded = false;
+
+        for answer in &answers {
+            if let Some(pts) = answer.points_earned {
+                total_score += pts;
+                if pts > 0.0 {
+                    correct_count += 1;
+                }
+            } else {
+                // Check if this is an essay question still ungraded
+                let q = questions.iter().find(|q| q.id == answer.question_id);
+                if let Some(q) = q {
+                    if q.question_type == "essay" {
+                        has_ungraded = true;
+                    }
+                }
+            }
+        }
+
+        let new_status = if has_ungraded {
+            "needs_grading"
+        } else {
+            "scored"
+        };
+
+        sqlx::query(
+            "UPDATE exam_sessions SET status = $2, score = $3 WHERE id = $1",
+        )
+        .bind(session_id)
+        .bind(new_status)
+        .bind(total_score)
+        .execute(pool)
+        .await
+        .map_err(AppError::Database)?;
+
+        // Update participant_stages score
+        sqlx::query(
+            "UPDATE participant_stages SET score = $2, updated_at = now() WHERE id = $1",
+        )
+        .bind(session.participant_stage_id)
+        .bind(total_score)
+        .execute(pool)
+        .await
+        .map_err(AppError::Database)?;
+
+        Ok(ScoreResult {
+            session_id,
+            total_score,
+            max_score,
+            completion_time_secs: session.completion_time_secs.unwrap_or(0),
+            correct_count,
+            total_questions: questions.len() as i32,
+            needs_manual_grading: has_ungraded,
+        })
+    }
+
     pub async fn get_question(pool: &PgPool, id: Uuid) -> Result<Option<Question>, AppError> {
         sqlx::query_as::<_, Question>("SELECT * FROM questions WHERE id = $1")
             .bind(id)

@@ -145,7 +145,6 @@ pub async fn get_ranking(
     path = "/api/stages/{stage_id}/ranking/review",
     tag = "ranking",
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
-    request_body = ReviewRequest,
     responses(
         (status = 200, description = "Ranking reviewed (draft → reviewed)", body = inline(ApiResponse<RankingResult>)),
         (status = 400, description = "Invalid transition")
@@ -155,7 +154,6 @@ pub async fn review_ranking(
     auth: AuthContext,
     State(pool): State<PgPool>,
     Path(stage_id): Path<Uuid>,
-    Json(req): Json<ReviewRequest>,
 ) -> Response {
     if let Err(e) = auth.require("ranking.approve") {
         return e.into_response();
@@ -167,7 +165,7 @@ pub async fn review_ranking(
         }
         Err(e) => return e.into_response(),
     };
-    match RankingRepository::transition_result(&pool, result.id, "reviewed", Some(req.actor_id))
+    match RankingRepository::transition_result(&pool, result.id, "reviewed", Some(auth.user_id))
         .await
     {
         Ok(r) => ApiResponse::success(r).into_response(),
@@ -180,7 +178,6 @@ pub async fn review_ranking(
     path = "/api/stages/{stage_id}/ranking/approve",
     tag = "ranking",
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
-    request_body = ApproveRequest,
     responses(
         (status = 200, description = "Ranking approved (reviewed → approved)", body = inline(ApiResponse<RankingResult>)),
         (status = 400, description = "Invalid transition")
@@ -190,7 +187,6 @@ pub async fn approve_ranking(
     auth: AuthContext,
     State(pool): State<PgPool>,
     Path(stage_id): Path<Uuid>,
-    Json(req): Json<ApproveRequest>,
 ) -> Response {
     if let Err(e) = auth.require("ranking.approve") {
         return e.into_response();
@@ -202,7 +198,7 @@ pub async fn approve_ranking(
         }
         Err(e) => return e.into_response(),
     };
-    match RankingRepository::transition_result(&pool, result.id, "approved", Some(req.actor_id))
+    match RankingRepository::transition_result(&pool, result.id, "approved", Some(auth.user_id))
         .await
     {
         Ok(r) => ApiResponse::success(r).into_response(),

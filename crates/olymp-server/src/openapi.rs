@@ -93,6 +93,8 @@ use olymp_core::response::{ApiErrorBody, Meta};
         olymp_exam::handlers::create_question,
         olymp_exam::handlers::update_question,
         olymp_exam::handlers::delete_question,
+        olymp_exam::handlers::grade_answer,
+        olymp_exam::handlers::finalize_grading,
         olymp_exam::handlers::assign_session,
         olymp_exam::handlers::get_session,
         olymp_exam::handlers::start_session,
@@ -188,6 +190,8 @@ use olymp_core::response::{ApiErrorBody, Meta};
             olymp_exam::models::UpdateExamRequest,
             olymp_exam::models::CreateQuestionRequest,
             olymp_exam::models::UpdateQuestionRequest,
+            olymp_exam::models::GradeAnswerRequest,
+            olymp_event::models::StageWithEnrollment,
             olymp_exam::models::AssignSessionRequest,
             olymp_exam::models::SubmitAnswerRequest,
             olymp_exam::models::BatchSubmitAnswersRequest,
@@ -209,8 +213,7 @@ use olymp_core::response::{ApiErrorBody, Meta};
             olymp_ranking::models::RankingResultWithEntries,
             olymp_ranking::models::CreateRankingRuleRequest,
             olymp_ranking::models::UpdateRankingRuleRequest,
-            olymp_ranking::models::ReviewRequest,
-            olymp_ranking::models::ApproveRequest,
+
             olymp_ranking::models::PromotionResult,
             // Certificates
             olymp_certificate::models::CertificateTemplate,

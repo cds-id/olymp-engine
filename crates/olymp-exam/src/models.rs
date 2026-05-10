@@ -80,6 +80,7 @@ pub struct Answer {
     pub answer_data: Option<serde_json::Value>,
     pub is_correct: Option<bool>,
     pub points_earned: Option<f64>,
+    pub feedback: Option<String>,
     pub answered_at: DateTime<Utc>,
 }
 
@@ -139,6 +140,12 @@ pub struct CreateQuestionRequest {
     pub correct_answer: Option<serde_json::Value>,
     pub points: f64,
     pub sequence: i32,
+}
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct GradeAnswerRequest {
+    pub points_earned: f64,
+    pub feedback: Option<String>,
 }
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]

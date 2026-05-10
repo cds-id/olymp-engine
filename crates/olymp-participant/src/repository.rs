@@ -12,6 +12,7 @@ impl ParticipantRepository {
     pub async fn register(
         pool: &PgPool,
         event_id: Uuid,
+        user_id: Uuid,
         req: &RegisterParticipantRequest,
     ) -> Result<Participant, AppError> {
         // Check stage capacity if set
@@ -43,7 +44,7 @@ impl ParticipantRepository {
              VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING *",
         )
-        .bind(req.user_id)
+        .bind(user_id)
         .bind(event_id)
         .bind(req.education_level_id)
         .bind(req.subject_id)

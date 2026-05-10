@@ -113,6 +113,33 @@ pub struct UpdateStageRequest {
     pub ended_at: Option<DateTime<Utc>>,
 }
 
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+pub struct AvailableStageFilters {
+    pub tier: Option<String>,
+    pub province_id: Option<Uuid>,
+    pub district_id: Option<Uuid>,
+}
+
+/// Stage with enrollment count for peserta-facing views
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, utoipa::ToSchema)]
+pub struct StageWithEnrollment {
+    pub id: Uuid,
+    pub event_id: Uuid,
+    pub tier: String,
+    pub sequence: i32,
+    pub status: String,
+    pub name: Option<String>,
+    pub location: Option<String>,
+    pub district_id: Option<Uuid>,
+    pub province_id: Option<Uuid>,
+    pub capacity: Option<i32>,
+    pub enrolled_count: i64,
+    pub registration_opens_at: Option<DateTime<Utc>>,
+    pub registration_closes_at: Option<DateTime<Utc>>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub ended_at: Option<DateTime<Utc>>,
+}
+
 // ─── Event Category ───
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize, utoipa::ToSchema)]

@@ -38,7 +38,6 @@ pub struct ParticipantStage {
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct RegisterParticipantRequest {
-    pub user_id: Uuid,
     pub education_level_id: Uuid,
     pub subject_id: Uuid,
     /// Stage to enroll into (peserta picks from available stages)
