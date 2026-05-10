@@ -7,7 +7,7 @@ use axum::{
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::models::{CreateDistrictRequest, CreateProvinceRequest};
+use crate::models::*;
 use crate::repository::RegionRepository;
 use olymp_core::response::{ApiResponse, WithStatus};
 use olymp_core::AppError;
@@ -19,7 +19,7 @@ use olymp_core::AppError;
     path = "/api/provinces",
     tag = "regions",
     responses(
-        (status = 200, description = "List of provinces")
+        (status = 200, description = "List of provinces", body = Vec<Province>)
     )
 )]
 pub async fn list_provinces(State(pool): State<PgPool>) -> Response {
@@ -35,7 +35,7 @@ pub async fn list_provinces(State(pool): State<PgPool>) -> Response {
     tag = "regions",
     params(("id" = Uuid, Path, description = "Province ID")),
     responses(
-        (status = 200, description = "Province details"),
+        (status = 200, description = "Province details", body = Province),
         (status = 404, description = "Not found")
     )
 )]
@@ -53,7 +53,7 @@ pub async fn get_province(State(pool): State<PgPool>, Path(id): Path<Uuid>) -> R
     tag = "regions",
     request_body = CreateProvinceRequest,
     responses(
-        (status = 201, description = "Province created"),
+        (status = 201, description = "Province created", body = Province),
         (status = 400, description = "Bad request")
     )
 )]
@@ -75,7 +75,7 @@ pub async fn create_province(
     tag = "regions",
     params(("province_id" = Uuid, Path, description = "Province ID")),
     responses(
-        (status = 200, description = "List of districts in province")
+        (status = 200, description = "List of districts in province", body = Vec<District>)
     )
 )]
 pub async fn list_districts(
@@ -95,7 +95,7 @@ pub async fn list_districts(
     params(("province_id" = Uuid, Path, description = "Province ID")),
     request_body = CreateDistrictRequest,
     responses(
-        (status = 201, description = "District created"),
+        (status = 201, description = "District created", body = District),
         (status = 400, description = "Bad request")
     )
 )]

@@ -18,7 +18,7 @@ use olymp_core::AppError;
     get,
     path = "/api/education-levels",
     tag = "events",
-    responses((status = 200, description = "List of education levels"))
+    responses((status = 200, description = "List of education levels", body = Vec<EducationLevel>))
 )]
 pub async fn list_education_levels(State(pool): State<PgPool>) -> Response {
     match EventRepository::list_education_levels(&pool).await {
@@ -33,7 +33,7 @@ pub async fn list_education_levels(State(pool): State<PgPool>) -> Response {
     tag = "events",
     request_body = CreateEducationLevelRequest,
     responses(
-        (status = 201, description = "Education level created"),
+        (status = 201, description = "Education level created", body = EducationLevel),
         (status = 400, description = "Bad request")
     )
 )]
@@ -53,7 +53,7 @@ pub async fn create_education_level(
     get,
     path = "/api/subjects",
     tag = "events",
-    responses((status = 200, description = "List of subjects"))
+    responses((status = 200, description = "List of subjects", body = Vec<Subject>))
 )]
 pub async fn list_subjects(State(pool): State<PgPool>) -> Response {
     match EventRepository::list_subjects(&pool).await {
@@ -68,7 +68,7 @@ pub async fn list_subjects(State(pool): State<PgPool>) -> Response {
     tag = "events",
     request_body = CreateSubjectRequest,
     responses(
-        (status = 201, description = "Subject created"),
+        (status = 201, description = "Subject created", body = Subject),
         (status = 400, description = "Bad request")
     )
 )]
@@ -88,7 +88,7 @@ pub async fn create_subject(
     get,
     path = "/api/events",
     tag = "events",
-    responses((status = 200, description = "List of events"))
+    responses((status = 200, description = "List of events", body = Vec<Event>))
 )]
 pub async fn list_events(State(pool): State<PgPool>) -> Response {
     match EventRepository::list_events(&pool).await {
@@ -103,7 +103,7 @@ pub async fn list_events(State(pool): State<PgPool>) -> Response {
     tag = "events",
     params(("id" = Uuid, Path, description = "Event ID")),
     responses(
-        (status = 200, description = "Event details"),
+        (status = 200, description = "Event details", body = Event),
         (status = 404, description = "Not found")
     )
 )]
@@ -121,7 +121,7 @@ pub async fn get_event(State(pool): State<PgPool>, Path(id): Path<Uuid>) -> Resp
     tag = "events",
     request_body = CreateEventRequest,
     responses(
-        (status = 201, description = "Event created"),
+        (status = 201, description = "Event created", body = Event),
         (status = 400, description = "Bad request")
     )
 )]
@@ -142,7 +142,7 @@ pub async fn create_event(
     params(("id" = Uuid, Path, description = "Event ID")),
     request_body = UpdateEventRequest,
     responses(
-        (status = 200, description = "Event updated"),
+        (status = 200, description = "Event updated", body = Event),
         (status = 404, description = "Not found")
     )
 )]
@@ -164,7 +164,7 @@ pub async fn update_event(
     path = "/api/events/{event_id}/stages",
     tag = "events",
     params(("event_id" = Uuid, Path, description = "Event ID")),
-    responses((status = 200, description = "List of stages for event"))
+    responses((status = 200, description = "List of stages for event", body = Vec<Stage>))
 )]
 pub async fn list_stages(
     State(pool): State<PgPool>,
@@ -183,7 +183,7 @@ pub async fn list_stages(
     params(("event_id" = Uuid, Path, description = "Event ID")),
     request_body = CreateStageRequest,
     responses(
-        (status = 201, description = "Stage created"),
+        (status = 201, description = "Stage created", body = Stage),
         (status = 400, description = "Bad request")
     )
 )]
@@ -205,7 +205,7 @@ pub async fn create_stage(
     params(("id" = Uuid, Path, description = "Stage ID")),
     request_body = UpdateStageStatusRequest,
     responses(
-        (status = 200, description = "Stage status updated"),
+        (status = 200, description = "Stage status updated", body = Stage),
         (status = 404, description = "Not found")
     )
 )]
@@ -227,7 +227,7 @@ pub async fn update_stage_status(
     path = "/api/events/{event_id}/categories",
     tag = "events",
     params(("event_id" = Uuid, Path, description = "Event ID")),
-    responses((status = 200, description = "List of event categories"))
+    responses((status = 200, description = "List of event categories", body = Vec<EventCategory>))
 )]
 pub async fn list_event_categories(
     State(pool): State<PgPool>,
@@ -246,7 +246,7 @@ pub async fn list_event_categories(
     params(("event_id" = Uuid, Path, description = "Event ID")),
     request_body = CreateEventCategoryRequest,
     responses(
-        (status = 201, description = "Event category created"),
+        (status = 201, description = "Event category created", body = EventCategory),
         (status = 400, description = "Bad request")
     )
 )]

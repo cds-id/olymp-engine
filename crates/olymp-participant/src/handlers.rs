@@ -30,7 +30,7 @@ pub struct ListParams {
         ("offset" = Option<i64>, Query, description = "Offset"),
     ),
     responses(
-        (status = 200, description = "List of participants"),
+        (status = 200, description = "List of participants", body = Vec<Participant>),
     )
 )]
 pub async fn list_event_participants(
@@ -56,7 +56,7 @@ pub async fn list_event_participants(
     params(("event_id" = Uuid, Path, description = "Event ID")),
     request_body = RegisterParticipantRequest,
     responses(
-        (status = 201, description = "Participant registered"),
+        (status = 201, description = "Participant registered", body = Participant),
         (status = 409, description = "Already registered"),
     )
 )]
@@ -81,7 +81,7 @@ pub async fn register_participant(
     tag = "participants",
     params(("id" = Uuid, Path, description = "Participant ID")),
     responses(
-        (status = 200, description = "Participant detail with stages"),
+        (status = 200, description = "Participant detail with stages", body = ParticipantDetail),
         (status = 404, description = "Not found"),
     )
 )]
@@ -118,7 +118,7 @@ pub async fn get_participant(
     params(("id" = Uuid, Path, description = "Participant ID")),
     request_body = UpdateParticipantRequest,
     responses(
-        (status = 200, description = "Participant updated"),
+        (status = 200, description = "Participant updated", body = Participant),
         (status = 404, description = "Not found"),
     )
 )]
@@ -141,7 +141,7 @@ pub async fn update_participant(
     tag = "participants",
     params(("id" = Uuid, Path, description = "Participant ID")),
     responses(
-        (status = 200, description = "Participant verified"),
+        (status = 200, description = "Participant verified", body = ParticipantStage),
         (status = 400, description = "Invalid transition"),
         (status = 404, description = "Not found"),
     )
@@ -161,7 +161,7 @@ pub async fn verify_participant(
     tag = "participants",
     params(("id" = Uuid, Path, description = "Participant ID")),
     responses(
-        (status = 200, description = "Participant approved"),
+        (status = 200, description = "Participant approved", body = ParticipantStage),
         (status = 400, description = "Invalid transition"),
         (status = 404, description = "Not found"),
     )
@@ -181,7 +181,7 @@ pub async fn approve_participant(
     tag = "participants",
     params(("id" = Uuid, Path, description = "Participant ID")),
     responses(
-        (status = 200, description = "Participant rejected"),
+        (status = 200, description = "Participant rejected", body = ParticipantStage),
         (status = 400, description = "Invalid transition"),
         (status = 404, description = "Not found"),
     )
@@ -205,7 +205,7 @@ pub async fn reject_participant(
         ("offset" = Option<i64>, Query, description = "Offset"),
     ),
     responses(
-        (status = 200, description = "List of participants for stage"),
+        (status = 200, description = "List of participants for stage", body = Vec<ParticipantListItem>),
     )
 )]
 pub async fn list_stage_participants(

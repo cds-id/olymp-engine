@@ -32,7 +32,7 @@ pub struct MonitoringState {
     tag = "monitoring",
     request_body = CreateCheatingLogRequest,
     responses(
-        (status = 201, description = "Cheating log recorded"),
+        (status = 201, description = "Cheating log recorded", body = CheatingLog),
     )
 )]
 pub async fn create_cheating_log(
@@ -78,7 +78,7 @@ pub async fn create_cheating_log(
     path = "/api/sessions/{session_id}/cheating-logs",
     tag = "monitoring",
     params(("session_id" = Uuid, Path, description = "Exam session ID")),
-    responses((status = 200, description = "Cheating logs for session"))
+    responses((status = 200, description = "Cheating logs for session", body = Vec<CheatingLog>))
 )]
 pub async fn list_cheating_logs(
     State(state): State<MonitoringState>,
@@ -98,7 +98,7 @@ pub async fn list_cheating_logs(
     tag = "monitoring",
     params(("session_id" = Uuid, Path, description = "Exam session ID")),
     request_body = UpdateProgressRequest,
-    responses((status = 200, description = "Progress updated"))
+    responses((status = 200, description = "Progress updated", body = ExamProgress))
 )]
 pub async fn update_progress(
     State(state): State<MonitoringState>,
@@ -129,7 +129,7 @@ pub async fn update_progress(
     tag = "monitoring",
     params(("session_id" = Uuid, Path, description = "Exam session ID")),
     responses(
-        (status = 200, description = "Current progress"),
+        (status = 200, description = "Current progress", body = ExamProgress),
         (status = 404, description = "No progress yet")
     )
 )]
@@ -151,7 +151,7 @@ pub async fn get_progress(
     path = "/api/exams/{exam_id}/progress",
     tag = "monitoring",
     params(("exam_id" = Uuid, Path, description = "Exam ID")),
-    responses((status = 200, description = "All participant progress for exam"))
+    responses((status = 200, description = "All participant progress for exam", body = Vec<ExamProgress>))
 )]
 pub async fn list_exam_progress(
     State(state): State<MonitoringState>,
@@ -177,7 +177,7 @@ pub async fn list_exam_progress(
         ("limit" = Option<i64>, Query, description = "Max results (default 50, max 200)"),
         ("offset" = Option<i64>, Query, description = "Offset for pagination"),
     ),
-    responses((status = 200, description = "Audit logs"))
+    responses((status = 200, description = "Audit logs", body = Vec<AuditLog>))
 )]
 pub async fn query_audit_logs(
     State(state): State<MonitoringState>,

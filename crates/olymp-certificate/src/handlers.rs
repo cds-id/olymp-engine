@@ -20,7 +20,7 @@ use olymp_core::response::{ApiResponse, WithStatus};
     params(("event_id" = Uuid, Path, description = "Event ID")),
     request_body = CreateTemplateRequest,
     responses(
-        (status = 201, description = "Template created"),
+        (status = 201, description = "Template created", body = CertificateTemplate),
     )
 )]
 pub async fn create_template(
@@ -40,7 +40,7 @@ pub async fn create_template(
     tag = "certificates",
     params(("event_id" = Uuid, Path, description = "Event ID")),
     responses(
-        (status = 200, description = "List of templates"),
+        (status = 200, description = "List of templates", body = Vec<CertificateTemplate>),
     )
 )]
 pub async fn list_templates(
@@ -59,7 +59,7 @@ pub async fn list_templates(
     tag = "certificates",
     params(("template_id" = Uuid, Path, description = "Template ID")),
     responses(
-        (status = 200, description = "Template details"),
+        (status = 200, description = "Template details", body = CertificateTemplate),
         (status = 404, description = "Not found")
     )
 )]
@@ -83,7 +83,7 @@ pub async fn get_template(
     params(("template_id" = Uuid, Path, description = "Template ID")),
     request_body = UpdateTemplateRequest,
     responses(
-        (status = 200, description = "Template updated"),
+        (status = 200, description = "Template updated", body = CertificateTemplate),
         (status = 404, description = "Not found")
     )
 )]
@@ -107,7 +107,7 @@ pub async fn update_template(
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
     request_body = GenerateCertificatesRequest,
     responses(
-        (status = 201, description = "Certificates generated"),
+        (status = 201, description = "Certificates generated", body = GenerationResult),
         (status = 404, description = "No template for stage")
     )
 )]
@@ -132,7 +132,7 @@ pub async fn generate_certificates(
     tag = "certificates",
     params(("participant_id" = Uuid, Path, description = "Participant ID")),
     responses(
-        (status = 200, description = "List of certificates for participant"),
+        (status = 200, description = "List of certificates for participant", body = Vec<Certificate>),
     )
 )]
 pub async fn list_participant_certificates(
@@ -151,7 +151,7 @@ pub async fn list_participant_certificates(
     tag = "certificates",
     params(("certificate_id" = Uuid, Path, description = "Certificate ID")),
     responses(
-        (status = 200, description = "Certificate details"),
+        (status = 200, description = "Certificate details", body = Certificate),
         (status = 404, description = "Not found")
     )
 )]

@@ -18,7 +18,7 @@ use olymp_core::response::{ApiResponse, WithStatus};
     path = "/api/stages/{stage_id}/exams",
     tag = "exams",
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
-    responses((status = 200, description = "List of exams for stage"))
+    responses((status = 200, description = "List of exams for stage", body = Vec<Exam>))
 )]
 pub async fn list_exams(
     State(pool): State<PgPool>,
@@ -37,7 +37,7 @@ pub async fn list_exams(
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
     request_body = CreateExamRequest,
     responses(
-        (status = 201, description = "Exam created"),
+        (status = 201, description = "Exam created", body = Exam),
         (status = 400, description = "Bad request")
     )
 )]
@@ -58,7 +58,7 @@ pub async fn create_exam(
     tag = "exams",
     params(("exam_id" = Uuid, Path, description = "Exam ID")),
     responses(
-        (status = 200, description = "Exam detail"),
+        (status = 200, description = "Exam detail", body = Exam),
         (status = 404, description = "Not found")
     )
 )]
@@ -80,7 +80,7 @@ pub async fn get_exam(
     params(("exam_id" = Uuid, Path, description = "Exam ID")),
     request_body = UpdateExamRequest,
     responses(
-        (status = 200, description = "Exam updated"),
+        (status = 200, description = "Exam updated", body = Exam),
         (status = 404, description = "Not found")
     )
 )]
@@ -102,7 +102,7 @@ pub async fn update_exam(
     path = "/api/exams/{exam_id}/questions",
     tag = "exams",
     params(("exam_id" = Uuid, Path, description = "Exam ID")),
-    responses((status = 200, description = "List of questions (admin view with answers)"))
+    responses((status = 200, description = "List of questions (admin view with answers)", body = Vec<Question>))
 )]
 pub async fn list_questions(
     State(pool): State<PgPool>,
@@ -121,7 +121,7 @@ pub async fn list_questions(
     params(("exam_id" = Uuid, Path, description = "Exam ID")),
     request_body = CreateQuestionRequest,
     responses(
-        (status = 201, description = "Question created"),
+        (status = 201, description = "Question created", body = Question),
         (status = 400, description = "Invalid question type")
     )
 )]
@@ -144,7 +144,7 @@ pub async fn create_question(
     tag = "exam-sessions",
     params(("exam_id" = Uuid, Path, description = "Exam ID")),
     responses(
-        (status = 201, description = "Session assigned"),
+        (status = 201, description = "Session assigned", body = ExamSession),
         (status = 409, description = "Already assigned")
     )
 )]
@@ -167,7 +167,7 @@ pub async fn assign_session(
     tag = "exam-sessions",
     params(("session_id" = Uuid, Path, description = "Session ID")),
     responses(
-        (status = 200, description = "Session started, questions returned"),
+        (status = 200, description = "Session started, questions returned", body = SessionStartResponse),
         (status = 400, description = "Cannot start")
     )
 )]
@@ -196,7 +196,7 @@ pub async fn start_session(
     params(("session_id" = Uuid, Path, description = "Session ID")),
     request_body = SubmitAnswerRequest,
     responses(
-        (status = 200, description = "Answer saved"),
+        (status = 200, description = "Answer saved", body = Answer),
         (status = 400, description = "Session not in progress or time expired")
     )
 )]
@@ -217,7 +217,7 @@ pub async fn save_answer(
     tag = "exam-sessions",
     params(("session_id" = Uuid, Path, description = "Session ID")),
     responses(
-        (status = 200, description = "Session submitted and scored"),
+        (status = 200, description = "Session submitted and scored", body = ScoreResult),
         (status = 400, description = "Cannot submit")
     )
 )]
@@ -237,7 +237,7 @@ pub async fn submit_session(
     tag = "exam-sessions",
     params(("session_id" = Uuid, Path, description = "Session ID")),
     responses(
-        (status = 200, description = "Session detail"),
+        (status = 200, description = "Session detail", body = ExamSession),
         (status = 404, description = "Not found")
     )
 )]
@@ -257,7 +257,7 @@ pub async fn get_session(
     path = "/api/sessions/{session_id}/answers",
     tag = "exam-sessions",
     params(("session_id" = Uuid, Path, description = "Session ID")),
-    responses((status = 200, description = "List of answers"))
+    responses((status = 200, description = "List of answers", body = Vec<Answer>))
 )]
 pub async fn list_answers(
     State(pool): State<PgPool>,

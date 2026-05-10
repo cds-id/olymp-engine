@@ -19,7 +19,7 @@ use olymp_core::response::{ApiResponse, WithStatus};
     tag = "ranking",
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
     responses(
-        (status = 200, description = "Ranking rule for stage"),
+        (status = 200, description = "Ranking rule for stage", body = RankingRule),
         (status = 404, description = "No rule configured")
     )
 )]
@@ -43,7 +43,7 @@ pub async fn get_ranking_rule(
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
     request_body = CreateRankingRuleRequest,
     responses(
-        (status = 200, description = "Ranking rule created/updated"),
+        (status = 200, description = "Ranking rule created/updated", body = RankingRule),
     )
 )]
 pub async fn upsert_ranking_rule(
@@ -65,7 +65,7 @@ pub async fn upsert_ranking_rule(
     tag = "ranking",
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
     responses(
-        (status = 201, description = "Ranking calculated"),
+        (status = 201, description = "Ranking calculated", body = RankingResult),
         (status = 400, description = "No participants or no rule"),
         (status = 404, description = "Rule not found")
     )
@@ -90,7 +90,7 @@ pub async fn calculate_ranking(
     tag = "ranking",
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
     responses(
-        (status = 200, description = "Latest ranking with entries"),
+        (status = 200, description = "Latest ranking with entries", body = RankingResultWithEntries),
         (status = 404, description = "No ranking calculated yet")
     )
 )]
@@ -124,7 +124,7 @@ pub async fn get_ranking(
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
     request_body = ReviewRequest,
     responses(
-        (status = 200, description = "Ranking reviewed (draft → reviewed)"),
+        (status = 200, description = "Ranking reviewed (draft → reviewed)", body = RankingResult),
         (status = 400, description = "Invalid transition")
     )
 )]
@@ -155,7 +155,7 @@ pub async fn review_ranking(
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
     request_body = ApproveRequest,
     responses(
-        (status = 200, description = "Ranking approved (reviewed → approved)"),
+        (status = 200, description = "Ranking approved (reviewed → approved)", body = RankingResult),
         (status = 400, description = "Invalid transition")
     )
 )]
@@ -185,7 +185,7 @@ pub async fn approve_ranking(
     tag = "ranking",
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
     responses(
-        (status = 200, description = "Ranking published (approved → published)"),
+        (status = 200, description = "Ranking published (approved → published)", body = RankingResult),
         (status = 400, description = "Invalid transition")
     )
 )]
@@ -214,7 +214,7 @@ pub async fn publish_ranking(
     tag = "ranking",
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
     responses(
-        (status = 200, description = "Qualified participants promoted to next stage"),
+        (status = 200, description = "Qualified participants promoted to next stage", body = PromotionResult),
         (status = 400, description = "Ranking not approved"),
         (status = 404, description = "No next stage")
     )

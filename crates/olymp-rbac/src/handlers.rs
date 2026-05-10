@@ -25,7 +25,7 @@ pub struct RbacState {
     get,
     path = "/api/rbac/roles",
     tag = "rbac",
-    responses((status = 200, description = "List of roles"))
+    responses((status = 200, description = "List of roles", body = Vec<Role>))
 )]
 pub async fn list_roles(State(state): State<RbacState>) -> Response {
     match RbacRepository::list_roles(&state.pool).await {
@@ -40,7 +40,7 @@ pub async fn list_roles(State(state): State<RbacState>) -> Response {
     tag = "rbac",
     request_body = CreateRoleRequest,
     responses(
-        (status = 201, description = "Role created"),
+        (status = 201, description = "Role created", body = Role),
         (status = 400, description = "Bad request")
     )
 )]
@@ -61,7 +61,7 @@ pub async fn create_role(
     params(("role_id" = Uuid, Path, description = "Role ID")),
     request_body = UpdateRoleRequest,
     responses(
-        (status = 200, description = "Role updated"),
+        (status = 200, description = "Role updated", body = Role),
         (status = 404, description = "Not found")
     )
 )]
@@ -82,7 +82,7 @@ pub async fn update_role(
     get,
     path = "/api/rbac/permissions",
     tag = "rbac",
-    responses((status = 200, description = "List of all permissions"))
+    responses((status = 200, description = "List of all permissions", body = Vec<Permission>))
 )]
 pub async fn list_permissions(State(state): State<RbacState>) -> Response {
     match RbacRepository::list_permissions(&state.pool).await {
@@ -96,7 +96,7 @@ pub async fn list_permissions(State(state): State<RbacState>) -> Response {
     path = "/api/rbac/roles/{role_id}/permissions",
     tag = "rbac",
     params(("role_id" = Uuid, Path, description = "Role ID")),
-    responses((status = 200, description = "Permissions for role"))
+    responses((status = 200, description = "Permissions for role", body = Vec<Permission>))
 )]
 pub async fn get_role_permissions(
     State(state): State<RbacState>,
@@ -119,6 +119,7 @@ pub async fn get_role_permissions(
         (status = 404, description = "Role not found")
     )
 )]
+// Response: {"message": "Permissions assigned"}
 pub async fn assign_role_permissions(
     State(state): State<RbacState>,
     Path(role_id): Path<Uuid>,
@@ -143,7 +144,7 @@ pub async fn assign_role_permissions(
     get,
     path = "/api/rbac/assignments",
     tag = "rbac",
-    responses((status = 200, description = "List of role assignments"))
+    responses((status = 200, description = "List of role assignments", body = Vec<UserRoleAssignment>))
 )]
 pub async fn list_assignments(State(state): State<RbacState>) -> Response {
     match RbacRepository::list_assignments(&state.pool).await {
@@ -158,7 +159,7 @@ pub async fn list_assignments(State(state): State<RbacState>) -> Response {
     tag = "rbac",
     request_body = CreateAssignmentRequest,
     responses(
-        (status = 201, description = "Assignment created"),
+        (status = 201, description = "Assignment created", body = UserRoleAssignment),
         (status = 400, description = "Bad request")
     )
 )]
@@ -183,7 +184,7 @@ pub async fn create_assignment(
     params(("id" = Uuid, Path, description = "Assignment ID")),
     request_body = UpdateAssignmentRequest,
     responses(
-        (status = 200, description = "Assignment updated"),
+        (status = 200, description = "Assignment updated", body = UserRoleAssignment),
         (status = 404, description = "Not found")
     )
 )]
