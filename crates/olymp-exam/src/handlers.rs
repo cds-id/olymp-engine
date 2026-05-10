@@ -14,6 +14,31 @@ use olymp_core::response::{ApiResponse, Meta, WithStatus};
 use olymp_core::types::ListParams;
 use olymp_core::AppError;
 
+// ─── My Sessions (peserta self-service) ───
+
+#[utoipa::path(
+    get,
+    path = "/api/users/me/sessions",
+    tag = "exam-sessions",
+    responses(
+        (status = 200, description = "Current user's exam sessions", body = inline(ApiResponse<Vec<ExamSession>>)),
+        (status = 401, description = "Unauthorized")
+    ),
+    security(("bearer" = []))
+)]
+pub async fn my_sessions(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+) -> Response {
+    if let Err(e) = auth.require("exam.view") {
+        return e.into_response();
+    }
+    match ExamRepository::list_sessions_by_user(&pool, auth.user_id).await {
+        Ok(sessions) => ApiResponse::success(sessions).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 // ─── Exams ───
 
 #[utoipa::path(

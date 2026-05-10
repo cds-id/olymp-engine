@@ -11,6 +11,7 @@ use crate::models::*;
 use crate::repository::RankingRepository;
 use olymp_core::auth::AuthContext;
 use olymp_core::response::{ApiResponse, WithStatus};
+use olymp_core::AppError;
 
 // ─── Ranking Rules ───
 
@@ -118,11 +119,16 @@ pub async fn get_ranking(
     let result = match RankingRepository::get_latest_result(&pool, stage_id).await {
         Ok(Some(r)) => r,
         Ok(None) => {
-            return olymp_core::AppError::NotFound("No ranking result for this stage".into())
+            return AppError::NotFound("No ranking result for this stage".into())
                 .into_response()
         }
         Err(e) => return e.into_response(),
     };
+
+    // Peserta can only see published rankings
+    if !auth.is_staff() && result.status != "published" {
+        return AppError::NotFound("No published ranking for this stage".into()).into_response();
+    }
 
     match RankingRepository::get_entries(&pool, result.id).await {
         Ok(entries) => {

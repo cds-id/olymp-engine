@@ -79,6 +79,7 @@ use olymp_core::response::{ApiErrorBody, Meta};
         olymp_monitoring::handlers::query_audit_logs,
         olymp_monitoring::handlers::monitor_stream,
         // Exams
+        olymp_exam::handlers::my_sessions,
         olymp_exam::handlers::list_exams,
         olymp_exam::handlers::create_exam,
         olymp_exam::handlers::get_exam,

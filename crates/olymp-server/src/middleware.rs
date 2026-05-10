@@ -23,8 +23,12 @@ const PUBLIC_PATHS: &[&str] = &[
     "/health",
     "/api/auth/register",
     "/api/auth/login",
+    "/api/auth/logout",
+    "/api/auth/refresh",
     "/api/auth/magic-link",
     "/api/auth/callback",
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
 ];
 
 const PUBLIC_PREFIXES: &[&str] = &["/api-docs/", "/swagger-ui/"];

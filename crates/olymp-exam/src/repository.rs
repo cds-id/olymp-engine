@@ -343,6 +343,24 @@ impl ExamRepository {
         })
     }
 
+    /// List all sessions belonging to a user (via participant → participant_stage → session)
+    pub async fn list_sessions_by_user(
+        pool: &PgPool,
+        user_id: Uuid,
+    ) -> Result<Vec<ExamSession>, AppError> {
+        sqlx::query_as::<_, ExamSession>(
+            "SELECT es.* FROM exam_sessions es
+             JOIN participant_stages ps ON ps.id = es.participant_stage_id
+             JOIN participants p ON p.id = ps.participant_id
+             WHERE p.user_id = $1
+             ORDER BY es.created_at DESC",
+        )
+        .bind(user_id)
+        .fetch_all(pool)
+        .await
+        .map_err(AppError::Database)
+    }
+
     /// Check if user owns session (through participant → participant_stage → session)
     pub async fn user_owns_session(
         pool: &PgPool,

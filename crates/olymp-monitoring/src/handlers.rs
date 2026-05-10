@@ -17,6 +17,7 @@ use crate::repository::MonitoringRepository;
 use olymp_core::auth::AuthContext;
 use olymp_core::response::{ApiResponse, Meta, WithStatus};
 use olymp_core::types::ListParams;
+use olymp_core::AppError;
 
 /// Shared state for monitoring SSE
 #[derive(Clone)]
@@ -136,9 +137,25 @@ pub async fn update_progress(
     Path(session_id): Path<Uuid>,
     Json(req): Json<UpdateProgressRequest>,
 ) -> Response {
-    // Participant updates own progress — exam.view is sufficient
     if let Err(e) = auth.require("exam.view") {
         return e.into_response();
+    }
+    // Ownership check: peserta can only update own session progress
+    if !auth.is_staff() {
+        match olymp_exam::repository::ExamRepository::user_owns_session(
+            &state.pool,
+            auth.user_id,
+            session_id,
+        )
+        .await
+        {
+            Ok(true) => {}
+            Ok(false) => {
+                return AppError::Forbidden("Cannot update another user's progress".into())
+                    .into_response()
+            }
+            Err(e) => return e.into_response(),
+        }
     }
     match MonitoringRepository::upsert_progress(&state.pool, session_id, &req).await {
         Ok(progress) => {

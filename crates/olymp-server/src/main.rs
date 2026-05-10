@@ -123,6 +123,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Exam routes (State<PgPool>)
     let exam_routes = axum::Router::new()
+        .route("/api/users/me/sessions", axum::routing::get(olymp_exam::handlers::my_sessions))
         .route("/api/stages/{stage_id}/exams", axum::routing::get(olymp_exam::handlers::list_exams).post(olymp_exam::handlers::create_exam))
         .route("/api/exams/{exam_id}", axum::routing::get(olymp_exam::handlers::get_exam).put(olymp_exam::handlers::update_exam))
         .route("/api/exams/{exam_id}/questions", axum::routing::get(olymp_exam::handlers::list_questions).post(olymp_exam::handlers::create_question))
