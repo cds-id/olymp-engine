@@ -220,9 +220,10 @@ impl ExamRepository {
 
         // Update participant_stages score
         sqlx::query(
-            "UPDATE participant_stages SET score = $2, updated_at = now() WHERE id = $1",
+            "UPDATE participant_stages SET status = $2, score = $3, updated_at = now() WHERE id = $1",
         )
         .bind(session.participant_stage_id)
+        .bind(new_status)
         .bind(total_score)
         .execute(pool)
         .await
@@ -539,10 +540,11 @@ impl ExamRepository {
 
         // Write score + completion_time back to participant_stages
         sqlx::query(
-            "UPDATE participant_stages SET score = $2, completion_time_secs = $3, updated_at = now()
+            "UPDATE participant_stages SET status = $2, score = $3, completion_time_secs = $4, updated_at = now()
              WHERE id = $1",
         )
         .bind(session.participant_stage_id)
+        .bind(new_status)
         .bind(total_score)
         .bind(session.completion_time_secs.unwrap_or(0))
         .execute(pool)
