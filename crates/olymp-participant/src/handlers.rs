@@ -265,6 +265,125 @@ pub async fn list_stage_participants(
     }
 }
 
+// ─── Batch operations (admin per-stage) ───
+
+#[utoipa::path(
+    post,
+    path = "/api/stages/{stage_id}/participants/batch-verify",
+    tag = "participants",
+    params(("stage_id" = Uuid, Path, description = "Stage ID")),
+    request_body = BatchParticipantRequest,
+    responses(
+        (status = 200, description = "Batch verify result", body = inline(ApiResponse<BatchResult>)),
+    )
+)]
+pub async fn batch_verify(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+    Path(stage_id): Path<Uuid>,
+    Json(req): Json<BatchParticipantRequest>,
+) -> Response {
+    if let Err(e) = auth.require("participant.verify") {
+        return e.into_response();
+    }
+    match ParticipantRepository::batch_transition(
+        &pool,
+        stage_id,
+        req.participant_ids.as_deref(),
+        "registered",
+        "verified",
+    )
+    .await
+    {
+        Ok(result) => ApiResponse::success(result).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/stages/{stage_id}/participants/batch-approve",
+    tag = "participants",
+    params(("stage_id" = Uuid, Path, description = "Stage ID")),
+    request_body = BatchParticipantRequest,
+    responses(
+        (status = 200, description = "Batch approve result", body = inline(ApiResponse<BatchResult>)),
+    )
+)]
+pub async fn batch_approve(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+    Path(stage_id): Path<Uuid>,
+    Json(req): Json<BatchParticipantRequest>,
+) -> Response {
+    if let Err(e) = auth.require("participant.approve") {
+        return e.into_response();
+    }
+    match ParticipantRepository::batch_transition(
+        &pool,
+        stage_id,
+        req.participant_ids.as_deref(),
+        "verified",
+        "assigned_to_exam",
+    )
+    .await
+    {
+        Ok(result) => ApiResponse::success(result).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/stages/{stage_id}/participants/batch-reject",
+    tag = "participants",
+    params(("stage_id" = Uuid, Path, description = "Stage ID")),
+    request_body = BatchParticipantRequest,
+    responses(
+        (status = 200, description = "Batch reject result", body = inline(ApiResponse<BatchResult>)),
+    )
+)]
+pub async fn batch_reject(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+    Path(stage_id): Path<Uuid>,
+    Json(req): Json<BatchParticipantRequest>,
+) -> Response {
+    if let Err(e) = auth.require("participant.reject") {
+        return e.into_response();
+    }
+    // Reject can apply from any non-terminal status
+    // Use registered as from_status for bulk, but also allow verified
+    let ids = req.participant_ids.as_deref();
+
+    // Try from multiple eligible statuses
+    let mut total_affected = 0i32;
+    let mut total_skipped = 0i32;
+    let mut all_errors = Vec::new();
+
+    for from in &["registered", "verified", "assigned_to_exam"] {
+        match ParticipantRepository::batch_transition(
+            &pool, stage_id, ids, from, "disqualified",
+        )
+        .await
+        {
+            Ok(r) => {
+                total_affected += r.affected;
+                total_skipped += r.skipped;
+                all_errors.extend(r.errors);
+            }
+            Err(e) => return e.into_response(),
+        }
+    }
+
+    ApiResponse::success(BatchResult {
+        affected: total_affected,
+        skipped: total_skipped,
+        errors: all_errors,
+    })
+    .into_response()
+}
+
 // ─── My participations (peserta self-service) ───
 
 #[utoipa::path(

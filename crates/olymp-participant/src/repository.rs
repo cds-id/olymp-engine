@@ -214,6 +214,90 @@ impl ParticipantRepository {
         .map_err(AppError::Database)
     }
 
+    // ─── Batch Operations ───
+
+    /// Batch transition participant_stages in a stage from one status to another.
+    /// If participant_ids is None/empty, applies to ALL with matching from_status.
+    pub async fn batch_transition(
+        pool: &PgPool,
+        stage_id: Uuid,
+        participant_ids: Option<&[Uuid]>,
+        from_status: &str,
+        to_status: &str,
+    ) -> Result<crate::models::BatchResult, AppError> {
+        // Get eligible participant_stages
+        let stages = if let Some(ids) = participant_ids.filter(|ids| !ids.is_empty()) {
+            sqlx::query_as::<_, ParticipantStage>(
+                "SELECT ps.* FROM participant_stages ps
+                 JOIN participants p ON p.id = ps.participant_id
+                 WHERE ps.stage_id = $1 AND ps.status = $2
+                   AND p.id = ANY($3)
+                 ORDER BY ps.created_at",
+            )
+            .bind(stage_id)
+            .bind(from_status)
+            .bind(ids)
+            .fetch_all(pool)
+            .await
+            .map_err(AppError::Database)?
+        } else {
+            sqlx::query_as::<_, ParticipantStage>(
+                "SELECT ps.* FROM participant_stages ps
+                 WHERE ps.stage_id = $1 AND ps.status = $2
+                 ORDER BY ps.created_at",
+            )
+            .bind(stage_id)
+            .bind(from_status)
+            .fetch_all(pool)
+            .await
+            .map_err(AppError::Database)?
+        };
+
+        let mut affected = 0i32;
+        let mut skipped = 0i32;
+        let mut errors = Vec::new();
+
+        for ps in &stages {
+            if !ps.can_transition_to(to_status) {
+                skipped += 1;
+                errors.push(format!(
+                    "participant_stage {} cannot transition from '{}' to '{}'",
+                    ps.id, ps.status, to_status
+                ));
+                continue;
+            }
+
+            let promoted_at = if to_status == "qualified" {
+                Some(chrono::Utc::now())
+            } else {
+                ps.promoted_at
+            };
+
+            match sqlx::query(
+                "UPDATE participant_stages SET status = $2, promoted_at = $3, updated_at = now()
+                 WHERE id = $1",
+            )
+            .bind(ps.id)
+            .bind(to_status)
+            .bind(promoted_at)
+            .execute(pool)
+            .await
+            {
+                Ok(_) => affected += 1,
+                Err(e) => {
+                    skipped += 1;
+                    errors.push(format!("participant_stage {}: {}", ps.id, e));
+                }
+            }
+        }
+
+        Ok(crate::models::BatchResult {
+            affected,
+            skipped,
+            errors,
+        })
+    }
+
     /// List all participations for a user (across all events)
     pub async fn list_by_user(
         pool: &PgPool,

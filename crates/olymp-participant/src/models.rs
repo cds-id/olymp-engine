@@ -58,6 +58,19 @@ pub struct VerifyRejectRequest {
     pub reason: Option<String>,
 }
 
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct BatchParticipantRequest {
+    /// If empty/null, applies to ALL eligible participants in stage
+    pub participant_ids: Option<Vec<Uuid>>,
+}
+
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct BatchResult {
+    pub affected: i32,
+    pub skipped: i32,
+    pub errors: Vec<String>,
+}
+
 // ─── Response DTOs ───
 
 #[derive(Debug, Serialize, utoipa::ToSchema)]

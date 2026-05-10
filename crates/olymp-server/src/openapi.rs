@@ -54,6 +54,9 @@ use olymp_core::response::{ApiErrorBody, Meta};
         olymp_participant::handlers::reject_participant,
         olymp_participant::handlers::list_stage_participants,
         olymp_participant::handlers::my_participations,
+        olymp_participant::handlers::batch_verify,
+        olymp_participant::handlers::batch_approve,
+        olymp_participant::handlers::batch_reject,
         // Certificates
         olymp_certificate::handlers::create_template,
         olymp_certificate::handlers::list_templates,
@@ -169,6 +172,8 @@ use olymp_core::response::{ApiErrorBody, Meta};
             olymp_participant::models::RegisterParticipantRequest,
             olymp_participant::models::UpdateParticipantRequest,
             olymp_participant::models::VerifyRejectRequest,
+            olymp_participant::models::BatchParticipantRequest,
+            olymp_participant::models::BatchResult,
             // Exams
             olymp_exam::models::Exam,
             olymp_exam::models::Question,

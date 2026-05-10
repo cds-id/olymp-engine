@@ -121,6 +121,9 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/participants/{id}/approve", axum::routing::post(olymp_participant::handlers::approve_participant))
         .route("/api/participants/{id}/reject", axum::routing::post(olymp_participant::handlers::reject_participant))
         .route("/api/stages/{stage_id}/participants", axum::routing::get(olymp_participant::handlers::list_stage_participants))
+        .route("/api/stages/{stage_id}/participants/batch-verify", axum::routing::post(olymp_participant::handlers::batch_verify))
+        .route("/api/stages/{stage_id}/participants/batch-approve", axum::routing::post(olymp_participant::handlers::batch_approve))
+        .route("/api/stages/{stage_id}/participants/batch-reject", axum::routing::post(olymp_participant::handlers::batch_reject))
         .with_state(db_pool.clone());
 
     // Exam routes (State<PgPool>)
