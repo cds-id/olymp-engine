@@ -142,6 +142,16 @@ pub struct CreateQuestionRequest {
 }
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct UpdateQuestionRequest {
+    pub question_text: Option<String>,
+    pub question_type: Option<String>,
+    pub options: Option<serde_json::Value>,
+    pub correct_answer: Option<serde_json::Value>,
+    pub points: Option<f64>,
+    pub sequence: Option<i32>,
+}
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct AssignSessionRequest {
     pub participant_stage_id: Uuid,
 }

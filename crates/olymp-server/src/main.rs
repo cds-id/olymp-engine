@@ -72,6 +72,7 @@ async fn main() -> anyhow::Result<()> {
         // User endpoints
         .route("/api/users/me", axum::routing::get(me).put(update_me))
         .route("/api/users/me/password", axum::routing::post(change_password))
+        .route("/api/users/me/roles", axum::routing::get(my_roles))
         // TODO: Phase 2 — RBAC routes
         // TODO: Phase 3 — participant routes
         // TODO: Phase 4 — exam routes
@@ -113,6 +114,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Participant routes (State<PgPool>)
     let participant_routes = axum::Router::new()
+        .route("/api/users/me/participations", axum::routing::get(olymp_participant::handlers::my_participations))
         .route("/api/events/{event_id}/participants", axum::routing::get(olymp_participant::handlers::list_event_participants).post(olymp_participant::handlers::register_participant))
         .route("/api/participants/{id}", axum::routing::get(olymp_participant::handlers::get_participant).put(olymp_participant::handlers::update_participant))
         .route("/api/participants/{id}/verify", axum::routing::post(olymp_participant::handlers::verify_participant))
@@ -127,6 +129,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/stages/{stage_id}/exams", axum::routing::get(olymp_exam::handlers::list_exams).post(olymp_exam::handlers::create_exam))
         .route("/api/exams/{exam_id}", axum::routing::get(olymp_exam::handlers::get_exam).put(olymp_exam::handlers::update_exam))
         .route("/api/exams/{exam_id}/questions", axum::routing::get(olymp_exam::handlers::list_questions).post(olymp_exam::handlers::create_question))
+        .route("/api/exams/{exam_id}/questions/{question_id}", axum::routing::put(olymp_exam::handlers::update_question).delete(olymp_exam::handlers::delete_question))
         .route("/api/exams/{exam_id}/sessions", axum::routing::post(olymp_exam::handlers::assign_session))
         .route("/api/sessions/{session_id}", axum::routing::get(olymp_exam::handlers::get_session))
         .route("/api/sessions/{session_id}/start", axum::routing::post(olymp_exam::handlers::start_session))

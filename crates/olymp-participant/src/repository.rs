@@ -213,4 +213,18 @@ impl ParticipantRepository {
         .await
         .map_err(AppError::Database)
     }
+
+    /// List all participations for a user (across all events)
+    pub async fn list_by_user(
+        pool: &PgPool,
+        user_id: Uuid,
+    ) -> Result<Vec<Participant>, AppError> {
+        sqlx::query_as::<_, Participant>(
+            "SELECT * FROM participants WHERE user_id = $1 ORDER BY created_at DESC",
+        )
+        .bind(user_id)
+        .fetch_all(pool)
+        .await
+        .map_err(AppError::Database)
+    }
 }

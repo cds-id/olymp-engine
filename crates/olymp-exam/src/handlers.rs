@@ -212,6 +212,65 @@ pub async fn create_question(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/exams/{exam_id}/questions/{question_id}",
+    tag = "exams",
+    params(
+        ("exam_id" = Uuid, Path, description = "Exam ID"),
+        ("question_id" = Uuid, Path, description = "Question ID"),
+    ),
+    request_body = UpdateQuestionRequest,
+    responses(
+        (status = 200, description = "Question updated", body = inline(ApiResponse<Question>)),
+        (status = 404, description = "Not found")
+    )
+)]
+pub async fn update_question(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+    Path((_exam_id, question_id)): Path<(Uuid, Uuid)>,
+    Json(req): Json<UpdateQuestionRequest>,
+) -> Response {
+    if let Err(e) = auth.require("exam.update") {
+        return e.into_response();
+    }
+    match ExamRepository::update_question(&pool, question_id, &req).await {
+        Ok(q) => ApiResponse::success(q).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/exams/{exam_id}/questions/{question_id}",
+    tag = "exams",
+    params(
+        ("exam_id" = Uuid, Path, description = "Exam ID"),
+        ("question_id" = Uuid, Path, description = "Question ID"),
+    ),
+    responses(
+        (status = 200, description = "Question deleted"),
+        (status = 404, description = "Not found")
+    )
+)]
+pub async fn delete_question(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+    Path((_exam_id, question_id)): Path<(Uuid, Uuid)>,
+) -> Response {
+    if let Err(e) = auth.require("exam.update") {
+        return e.into_response();
+    }
+    match ExamRepository::delete_question(&pool, question_id).await {
+        Ok(()) => ApiResponse::success(
+            serde_json::json!({"message": "Question deleted"}),
+        )
+        .into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 // ─── Sessions ───
 
 /// Helper: verify peserta owns session, staff can access any

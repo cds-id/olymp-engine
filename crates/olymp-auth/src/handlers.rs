@@ -13,6 +13,7 @@ use crate::extractors::AuthUser;
 use crate::notifications::{NotificationPreferences, NotificationPrefsService, UpdateNotificationPreferences};
 use crate::user::UserProfile;
 use crate::{JwtService, MagicLinkService, UserService, PasswordService, RegistrationService};
+use olymp_core::auth::AuthContext;
 use sqlx;
 
 #[derive(Debug, Serialize, Deserialize, utoipa::ToSchema)]
@@ -85,6 +86,15 @@ pub struct UpdateProfileRequest {
     pub name: Option<String>,
     pub username: Option<String>,
     pub phone: Option<String>,
+}
+
+/// Current user's roles and permissions for frontend conditional UI
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct MyRolesResponse {
+    pub roles: Vec<String>,
+    pub permissions: Vec<String>,
+    pub is_staff: bool,
+    pub is_admin: bool,
 }
 
 #[utoipa::path(
@@ -550,6 +560,30 @@ pub async fn update_notifications(
         Ok(prefs) => ApiResponse::success(prefs).into_response(),
         Err(e) => e.into_response(),
     }
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/users/me/roles",
+    tag = "auth",
+    responses(
+        (status = 200, description = "Current user roles and permissions", body = inline(ApiResponse<MyRolesResponse>)),
+        (status = 401, description = "Unauthorized")
+    ),
+    security(("bearer" = []))
+)]
+pub async fn my_roles(auth: AuthContext) -> Response {
+    let is_staff = auth.is_staff();
+    let is_admin = auth.is_admin();
+    let mut perms: Vec<String> = auth.permissions.into_iter().collect();
+    perms.sort();
+    ApiResponse::success(MyRolesResponse {
+        roles: auth.roles,
+        permissions: perms,
+        is_staff,
+        is_admin,
+    })
+    .into_response()
 }
 
 #[utoipa::path(

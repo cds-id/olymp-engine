@@ -265,6 +265,31 @@ pub async fn list_stage_participants(
     }
 }
 
+// ─── My participations (peserta self-service) ───
+
+#[utoipa::path(
+    get,
+    path = "/api/users/me/participations",
+    tag = "participants",
+    responses(
+        (status = 200, description = "Current user's event registrations", body = inline(ApiResponse<Vec<Participant>>)),
+        (status = 401, description = "Unauthorized")
+    ),
+    security(("bearer" = []))
+)]
+pub async fn my_participations(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+) -> Response {
+    if let Err(e) = auth.require("participant.view") {
+        return e.into_response();
+    }
+    match ParticipantRepository::list_by_user(&pool, auth.user_id).await {
+        Ok(list) => ApiResponse::success(list).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
 // ─── Helper: transition first/current stage ───
 
 async fn transition_first_stage(

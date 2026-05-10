@@ -140,6 +140,66 @@ impl ExamRepository {
         .map_err(AppError::Database)
     }
 
+    pub async fn get_question(pool: &PgPool, id: Uuid) -> Result<Option<Question>, AppError> {
+        sqlx::query_as::<_, Question>("SELECT * FROM questions WHERE id = $1")
+            .bind(id)
+            .fetch_optional(pool)
+            .await
+            .map_err(AppError::Database)
+    }
+
+    pub async fn update_question(
+        pool: &PgPool,
+        question_id: Uuid,
+        req: &UpdateQuestionRequest,
+    ) -> Result<Question, AppError> {
+        let current = Self::get_question(pool, question_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Question not found".into()))?;
+
+        // Validate question_type if changing
+        if let Some(ref qt) = req.question_type {
+            match qt.as_str() {
+                "multiple_choice" | "essay" | "true_false" => {}
+                _ => {
+                    return Err(AppError::BadRequest(
+                        "question_type must be: multiple_choice, essay, true_false".into(),
+                    ))
+                }
+            }
+        }
+
+        sqlx::query_as::<_, Question>(
+            "UPDATE questions SET
+               question_text = $2, question_type = $3, options = $4,
+               correct_answer = $5, points = $6, sequence = $7
+             WHERE id = $1 RETURNING *",
+        )
+        .bind(question_id)
+        .bind(req.question_text.as_deref().unwrap_or(&current.question_text))
+        .bind(req.question_type.as_deref().unwrap_or(&current.question_type))
+        .bind(req.options.as_ref().or(current.options.as_ref()))
+        .bind(req.correct_answer.as_ref().or(current.correct_answer.as_ref()))
+        .bind(req.points.unwrap_or(current.points))
+        .bind(req.sequence.unwrap_or(current.sequence))
+        .fetch_one(pool)
+        .await
+        .map_err(AppError::Database)
+    }
+
+    pub async fn delete_question(pool: &PgPool, question_id: Uuid) -> Result<(), AppError> {
+        let result = sqlx::query("DELETE FROM questions WHERE id = $1")
+            .bind(question_id)
+            .execute(pool)
+            .await
+            .map_err(AppError::Database)?;
+
+        if result.rows_affected() == 0 {
+            return Err(AppError::NotFound("Question not found".into()));
+        }
+        Ok(())
+    }
+
     pub async fn count_questions(pool: &PgPool, exam_id: Uuid) -> Result<i64, AppError> {
         sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM questions WHERE exam_id = $1")
             .bind(exam_id)
