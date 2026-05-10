@@ -113,6 +113,7 @@ use olymp_core::response::{ApiErrorBody, Meta};
         olymp_event::handlers::list_stages,
         olymp_event::handlers::create_stage,
         olymp_event::handlers::list_available_stages,
+        olymp_event::handlers::get_stage,
         olymp_event::handlers::update_stage,
         olymp_event::handlers::update_stage_status,
         olymp_event::handlers::list_event_categories,

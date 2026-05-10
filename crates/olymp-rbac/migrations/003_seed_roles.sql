@@ -48,6 +48,7 @@ CROSS JOIN permissions p
 WHERE r.name = 'peserta'
   AND p.code IN (
     'participant.view',
+    'participant.create',
     'exam.view',
     'ranking.view',
     'certificate.view',

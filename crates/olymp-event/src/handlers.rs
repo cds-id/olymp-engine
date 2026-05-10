@@ -287,6 +287,31 @@ pub async fn list_available_stages(
 }
 
 #[utoipa::path(
+    get,
+    path = "/api/stages/{id}",
+    tag = "events",
+    params(("id" = Uuid, Path, description = "Stage ID")),
+    responses(
+        (status = 200, description = "Stage details", body = inline(ApiResponse<Stage>)),
+        (status = 404, description = "Not found")
+    )
+)]
+pub async fn get_stage(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>,
+) -> Response {
+    if let Err(e) = auth.require("exam.view") {
+        return e.into_response();
+    }
+    match EventRepository::get_stage(&pool, id).await {
+        Ok(Some(stage)) => ApiResponse::success(stage).into_response(),
+        Ok(None) => AppError::NotFound("Stage not found".into()).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+#[utoipa::path(
     put,
     path = "/api/stages/{id}",
     tag = "events",

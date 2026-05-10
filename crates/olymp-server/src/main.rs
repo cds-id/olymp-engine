@@ -69,6 +69,8 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/auth/refresh", axum::routing::post(refresh))
         .route("/api/auth/magic-link", axum::routing::post(request_magic_link))
         .route("/api/auth/callback", axum::routing::post(magic_link_callback))
+        .route("/api/auth/forgot-password", axum::routing::post(forgot_password))
+        .route("/api/auth/reset-password", axum::routing::post(reset_password))
         // User endpoints
         .route("/api/users/me", axum::routing::get(me).put(update_me))
         .route("/api/users/me/password", axum::routing::post(change_password))
@@ -95,7 +97,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/events/{id}", axum::routing::get(olymp_event::handlers::get_event).put(olymp_event::handlers::update_event))
         .route("/api/events/{event_id}/stages", axum::routing::get(olymp_event::handlers::list_stages).post(olymp_event::handlers::create_stage))
         .route("/api/events/{event_id}/stages/available", axum::routing::get(olymp_event::handlers::list_available_stages))
-        .route("/api/stages/{id}", axum::routing::put(olymp_event::handlers::update_stage))
+        .route("/api/stages/{id}", axum::routing::get(olymp_event::handlers::get_stage).put(olymp_event::handlers::update_stage))
         .route("/api/stages/{id}/status", axum::routing::put(olymp_event::handlers::update_stage_status))
         .route("/api/events/{event_id}/categories", axum::routing::get(olymp_event::handlers::list_event_categories).post(olymp_event::handlers::create_event_category))
         .with_state(db_pool.clone());
