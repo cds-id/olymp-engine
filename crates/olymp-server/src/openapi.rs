@@ -110,6 +110,7 @@ use olymp_core::response::{ApiErrorBody, Meta};
         olymp_event::handlers::update_event,
         olymp_event::handlers::list_stages,
         olymp_event::handlers::create_stage,
+        olymp_event::handlers::update_stage,
         olymp_event::handlers::update_stage_status,
         olymp_event::handlers::list_event_categories,
         olymp_event::handlers::create_event_category,
@@ -149,6 +150,7 @@ use olymp_core::response::{ApiErrorBody, Meta};
             olymp_event::models::CreateEventRequest,
             olymp_event::models::UpdateEventRequest,
             olymp_event::models::CreateStageRequest,
+            olymp_event::models::UpdateStageRequest,
             olymp_event::models::UpdateStageStatusRequest,
             olymp_event::models::CreateEventCategoryRequest,
             // Core enums

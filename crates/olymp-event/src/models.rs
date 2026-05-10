@@ -68,6 +68,8 @@ pub struct Stage {
     pub tier: String,
     pub sequence: i32,
     pub status: String,
+    pub registration_opens_at: Option<DateTime<Utc>>,
+    pub registration_closes_at: Option<DateTime<Utc>>,
     pub started_at: Option<DateTime<Utc>>,
     pub ended_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
@@ -77,11 +79,23 @@ pub struct Stage {
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateStageRequest {
     pub tier: Tier,
+    pub registration_opens_at: Option<DateTime<Utc>>,
+    pub registration_closes_at: Option<DateTime<Utc>>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub ended_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateStageStatusRequest {
     pub status: StageStatus,
+}
+
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct UpdateStageRequest {
+    pub registration_opens_at: Option<DateTime<Utc>>,
+    pub registration_closes_at: Option<DateTime<Utc>>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub ended_at: Option<DateTime<Utc>>,
 }
 
 // ─── Event Category ───

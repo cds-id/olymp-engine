@@ -253,8 +253,34 @@ pub async fn create_stage(
     if let Err(e) = auth.require("olympiad.stage.manage") {
         return e.into_response();
     }
-    match EventRepository::create_stage(&pool, event_id, req.tier).await {
+    match EventRepository::create_stage(&pool, event_id, &req).await {
         Ok(stage) => WithStatus(StatusCode::CREATED, ApiResponse::success(stage)).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/stages/{id}",
+    tag = "events",
+    params(("id" = Uuid, Path, description = "Stage ID")),
+    request_body = UpdateStageRequest,
+    responses(
+        (status = 200, description = "Stage updated", body = inline(ApiResponse<Stage>)),
+        (status = 404, description = "Not found")
+    )
+)]
+pub async fn update_stage(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>,
+    Json(req): Json<UpdateStageRequest>,
+) -> Response {
+    if let Err(e) = auth.require("olympiad.stage.manage") {
+        return e.into_response();
+    }
+    match EventRepository::update_stage(&pool, id, &req).await {
+        Ok(stage) => ApiResponse::success(stage).into_response(),
         Err(e) => e.into_response(),
     }
 }

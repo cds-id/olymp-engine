@@ -271,6 +271,29 @@ impl ExamRepository {
             .await?
             .ok_or_else(|| AppError::NotFound("Exam not found".into()))?;
 
+        // Check stage is within exam phase window
+        let stage = sqlx::query_as::<_, (Option<chrono::DateTime<Utc>>, Option<chrono::DateTime<Utc>>)>(
+            "SELECT started_at, ended_at FROM stages WHERE id = $1",
+        )
+        .bind(exam.stage_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(AppError::Database)?;
+
+        if let Some((started_at, ended_at)) = stage {
+            let now = Utc::now();
+            if let Some(starts) = started_at {
+                if now < starts {
+                    return Err(AppError::BadRequest("Stage exam phase has not started yet".into()));
+                }
+            }
+            if let Some(ends) = ended_at {
+                if now > ends {
+                    return Err(AppError::BadRequest("Stage exam phase has ended".into()));
+                }
+            }
+        }
+
         let now = Utc::now();
         if let Some(opens) = exam.opens_at {
             if now < opens {

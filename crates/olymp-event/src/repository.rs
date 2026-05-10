@@ -2,7 +2,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::models::*;
-use olymp_core::types::{StageStatus, Tier};
+use olymp_core::types::StageStatus;
 use olymp_core::AppError;
 
 pub struct EventRepository;
@@ -163,15 +163,45 @@ impl EventRepository {
     pub async fn create_stage(
         pool: &PgPool,
         event_id: Uuid,
-        tier: Tier,
+        req: &CreateStageRequest,
     ) -> Result<Stage, AppError> {
-        let sequence = tier.sequence();
+        let sequence = req.tier.sequence();
         sqlx::query_as::<_, Stage>(
-            "INSERT INTO stages (event_id, tier, sequence) VALUES ($1, $2, $3) RETURNING *",
+            "INSERT INTO stages (event_id, tier, sequence, registration_opens_at, registration_closes_at, started_at, ended_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
         )
         .bind(event_id)
-        .bind(tier.to_string())
+        .bind(req.tier.to_string())
         .bind(sequence)
+        .bind(req.registration_opens_at)
+        .bind(req.registration_closes_at)
+        .bind(req.started_at)
+        .bind(req.ended_at)
+        .fetch_one(pool)
+        .await
+        .map_err(AppError::Database)
+    }
+
+    pub async fn update_stage(
+        pool: &PgPool,
+        id: Uuid,
+        req: &UpdateStageRequest,
+    ) -> Result<Stage, AppError> {
+        let current = Self::get_stage(pool, id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Stage not found".into()))?;
+
+        sqlx::query_as::<_, Stage>(
+            "UPDATE stages SET
+               registration_opens_at = $2, registration_closes_at = $3,
+               started_at = $4, ended_at = $5, updated_at = now()
+             WHERE id = $1 RETURNING *",
+        )
+        .bind(id)
+        .bind(req.registration_opens_at.or(current.registration_opens_at))
+        .bind(req.registration_closes_at.or(current.registration_closes_at))
+        .bind(req.started_at.or(current.started_at))
+        .bind(req.ended_at.or(current.ended_at))
         .fetch_one(pool)
         .await
         .map_err(AppError::Database)

@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 olymp-core = { path = "../olymp-core" }
+olymp-event = { path = "../olymp-event" }
 axum = { workspace = true }
 chrono = { workspace = true }
 serde = { workspace = true }
