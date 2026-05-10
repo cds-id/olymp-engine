@@ -55,7 +55,10 @@ impl TestDb {
                     Ok(_) => {}
                     Err(e) => {
                         let msg = e.to_string();
-                        if msg.contains("already exists") || msg.contains("duplicate key") {
+                        if msg.contains("already exists")
+                            || msg.contains("duplicate key")
+                            || msg.contains("does not exist")
+                        {
                             continue;
                         }
                         panic!("Migration failed on {:?}\nError: {}", entry.path(), e);

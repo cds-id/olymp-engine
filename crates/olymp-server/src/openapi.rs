@@ -1,6 +1,7 @@
 use utoipa::OpenApi;
 use olymp_auth::handlers::*;
-use olymp_auth::notifications::UpdateNotificationPreferences;
+use olymp_auth::notifications::{NotificationPreferences, UpdateNotificationPreferences};
+use olymp_auth::user::UserProfile;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -120,6 +121,8 @@ use olymp_auth::notifications::UpdateNotificationPreferences;
             ResetPasswordRequest,
             UpdateProfileRequest,
             UpdateNotificationPreferences,
+            NotificationPreferences,
+            UserProfile,
             // Region
             olymp_region::models::Province,
             olymp_region::models::District,

@@ -10,7 +10,8 @@ use olymp_core::response::{ApiResponse, WithStatus};
 use olymp_notification::models::MagicLinkData;
 use crate::AppState;
 use crate::extractors::AuthUser;
-use crate::notifications::{NotificationPrefsService, UpdateNotificationPreferences};
+use crate::notifications::{NotificationPreferences, NotificationPrefsService, UpdateNotificationPreferences};
+use crate::user::UserProfile;
 use crate::{JwtService, MagicLinkService, UserService, PasswordService, RegistrationService};
 use sqlx;
 
@@ -287,7 +288,7 @@ pub async fn login(
     path = "/api/users/me",
     tag = "auth",
     responses(
-        (status = 200, description = "User profile"),
+        (status = 200, description = "User profile", body = UserProfile),
         (status = 401, description = "Unauthorized")
     ),
     security(("bearer" = []))
@@ -310,7 +311,7 @@ pub async fn me(
     tag = "auth",
     request_body = UpdateProfileRequest,
     responses(
-        (status = 200, description = "Profile updated"),
+        (status = 200, description = "Profile updated", body = UserProfile),
         (status = 401, description = "Unauthorized")
     ),
     security(("bearer" = []))
@@ -512,7 +513,7 @@ pub async fn refresh(
     path = "/api/users/me/notifications",
     tag = "auth",
     responses(
-        (status = 200, description = "Notification preferences"),
+        (status = 200, description = "Notification preferences", body = NotificationPreferences),
         (status = 401, description = "Unauthorized")
     ),
     security(("bearer" = []))
@@ -534,7 +535,7 @@ pub async fn get_notifications(
     tag = "auth",
     request_body = UpdateNotificationPreferences,
     responses(
-        (status = 200, description = "Preferences updated"),
+        (status = 200, description = "Preferences updated", body = NotificationPreferences),
         (status = 401, description = "Unauthorized")
     ),
     security(("bearer" = []))

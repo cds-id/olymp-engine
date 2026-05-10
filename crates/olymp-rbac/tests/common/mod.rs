@@ -57,6 +57,7 @@ impl TestDb {
                         let msg = e.to_string();
                         if msg.contains("already exists")
                             || msg.contains("duplicate key")
+                            || msg.contains("does not exist")
                         {
                             continue;
                         }

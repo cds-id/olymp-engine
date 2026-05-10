@@ -3,24 +3,24 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow, utoipa::ToSchema)]
 pub struct NotificationPreferences {
     pub id: Uuid,
     pub user_id: Uuid,
-    pub order_updates: bool,
-    pub promotions: bool,
+    pub event_updates: bool,
+    pub exam_reminders: bool,
     pub security_alerts: bool,
-    pub newsletter: bool,
+    pub result_announcements: bool,
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateNotificationPreferences {
-    pub order_updates: Option<bool>,
-    pub promotions: Option<bool>,
+    pub event_updates: Option<bool>,
+    pub exam_reminders: Option<bool>,
     pub security_alerts: Option<bool>,
-    pub newsletter: Option<bool>,
+    pub result_announcements: Option<bool>,
 }
 
 pub struct NotificationPrefsService {
@@ -75,17 +75,17 @@ impl NotificationPrefsService {
 
         sqlx::query(
             "UPDATE auth.notification_preferences SET
-               order_updates = COALESCE($1, order_updates),
-               promotions = COALESCE($2, promotions),
+               event_updates = COALESCE($1, event_updates),
+               exam_reminders = COALESCE($2, exam_reminders),
                security_alerts = COALESCE($3, security_alerts),
-               newsletter = COALESCE($4, newsletter),
+               result_announcements = COALESCE($4, result_announcements),
                updated_at = now()
              WHERE user_id = $5"
         )
-        .bind(req.order_updates)
-        .bind(req.promotions)
+        .bind(req.event_updates)
+        .bind(req.exam_reminders)
         .bind(req.security_alerts)
-        .bind(req.newsletter)
+        .bind(req.result_announcements)
         .bind(user_id)
         .execute(&self.pool)
         .await
