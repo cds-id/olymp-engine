@@ -398,7 +398,7 @@ pub async fn save_answer(
     tag = "exam-sessions",
     params(("session_id" = Uuid, Path, description = "Session ID")),
     responses(
-        (status = 200, description = "Session submitted and scored", body = inline(ApiResponse<ScoreResult>)),
+        (status = 200, description = "Session submitted, scoring queued", body = inline(ApiResponse<ExamSession>)),
         (status = 400, description = "Cannot submit")
     )
 )]

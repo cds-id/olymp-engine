@@ -10,7 +10,9 @@ pub use error::*;
 pub fn start_workers(pool: PgPool, redis: redis::Client) {
     let pool1 = pool.clone();
     let pool2 = pool.clone();
+    let pool3 = pool.clone();
     let redis1 = redis.clone();
+    let redis2 = redis.clone();
 
     // Expired session cleanup — every 5 minutes
     // Auto-submit exam sessions past their deadline
@@ -31,6 +33,17 @@ pub fn start_workers(pool: PgPool, redis: redis::Client) {
             ticker.tick().await;
             if let Err(e) = process_email_queue(&pool2, &redis1).await {
                 tracing::error!("Email queue processing failed: {:?}", e);
+            }
+        }
+    });
+
+    // Scoring queue processor — every 5 seconds
+    tokio::spawn(async move {
+        let mut ticker = interval(Duration::from_secs(5));
+        loop {
+            ticker.tick().await;
+            if let Err(e) = process_scoring_queue(&pool3, &redis2).await {
+                tracing::error!("Scoring queue processing failed: {:?}", e);
             }
         }
     });
@@ -96,6 +109,54 @@ pub async fn process_email_queue(
                 Err(e) => {
                     tracing::error!("Invalid email job JSON: {:?}", e);
                 }
+            }
+        }
+    }
+
+    Ok(processed)
+}
+
+/// Process submitted sessions that need scoring.
+/// Polls DB for sessions with status='submitted', scores them via ExamRepository::score_session.
+pub async fn process_scoring_queue(
+    pool: &PgPool,
+    _redis: &redis::Client,
+) -> Result<usize, WorkerError> {
+    // Find submitted sessions pending scoring
+    let pending: Vec<(uuid::Uuid,)> = sqlx::query_as(
+        "SELECT id FROM exam_sessions WHERE status = 'submitted' ORDER BY finished_at ASC LIMIT 20",
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| WorkerError::Database(e.to_string()))?;
+
+    if pending.is_empty() {
+        return Ok(0);
+    }
+
+    let mut processed = 0;
+
+    for (session_id,) in pending {
+        tracing::info!("Scoring session: {}", session_id);
+        match olymp_exam::repository::ExamRepository::score_session(pool, session_id).await {
+            Ok(result) => {
+                if result.needs_manual_grading {
+                    tracing::info!(
+                        "Session {} needs manual grading (essay questions)",
+                        session_id
+                    );
+                } else {
+                    tracing::info!(
+                        "Session {} scored: {}/{}",
+                        session_id,
+                        result.total_score,
+                        result.max_score
+                    );
+                }
+                processed += 1;
+            }
+            Err(e) => {
+                tracing::error!("Failed to score session {}: {:?}", session_id, e);
             }
         }
     }

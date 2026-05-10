@@ -260,6 +260,29 @@ pub async fn create_stage(
 }
 
 #[utoipa::path(
+    get,
+    path = "/api/events/{event_id}/stages/available",
+    tag = "events",
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    responses(
+        (status = 200, description = "Stages open for registration", body = inline(ApiResponse<Vec<Stage>>)),
+    )
+)]
+pub async fn list_available_stages(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+    Path(event_id): Path<Uuid>,
+) -> Response {
+    if let Err(e) = auth.require("event.view") {
+        return e.into_response();
+    }
+    match EventRepository::list_available_stages(&pool, event_id).await {
+        Ok(stages) => ApiResponse::success(stages).into_response(),
+        Err(e) => e.into_response(),
+    }
+}
+
+#[utoipa::path(
     put,
     path = "/api/stages/{id}",
     tag = "events",

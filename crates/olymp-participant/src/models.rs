@@ -41,6 +41,8 @@ pub struct RegisterParticipantRequest {
     pub user_id: Uuid,
     pub education_level_id: Uuid,
     pub subject_id: Uuid,
+    /// Stage to enroll into (peserta picks from available stages)
+    pub stage_id: Uuid,
     pub school_name: Option<String>,
     pub district_id: Option<Uuid>,
     pub province_id: Option<Uuid>,

@@ -167,12 +167,18 @@ impl EventRepository {
     ) -> Result<Stage, AppError> {
         let sequence = req.tier.sequence();
         sqlx::query_as::<_, Stage>(
-            "INSERT INTO stages (event_id, tier, sequence, registration_opens_at, registration_closes_at, started_at, ended_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+            "INSERT INTO stages (event_id, tier, sequence, name, location, district_id, province_id, capacity,
+                                registration_opens_at, registration_closes_at, started_at, ended_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *",
         )
         .bind(event_id)
         .bind(req.tier.to_string())
         .bind(sequence)
+        .bind(&req.name)
+        .bind(&req.location)
+        .bind(req.district_id)
+        .bind(req.province_id)
+        .bind(req.capacity)
         .bind(req.registration_opens_at)
         .bind(req.registration_closes_at)
         .bind(req.started_at)
@@ -193,11 +199,17 @@ impl EventRepository {
 
         sqlx::query_as::<_, Stage>(
             "UPDATE stages SET
-               registration_opens_at = $2, registration_closes_at = $3,
-               started_at = $4, ended_at = $5, updated_at = now()
+               name = $2, location = $3, district_id = $4, province_id = $5, capacity = $6,
+               registration_opens_at = $7, registration_closes_at = $8,
+               started_at = $9, ended_at = $10, updated_at = now()
              WHERE id = $1 RETURNING *",
         )
         .bind(id)
+        .bind(req.name.as_deref().or(current.name.as_deref()))
+        .bind(req.location.as_deref().or(current.location.as_deref()))
+        .bind(req.district_id.or(current.district_id))
+        .bind(req.province_id.or(current.province_id))
+        .bind(req.capacity.or(current.capacity))
         .bind(req.registration_opens_at.or(current.registration_opens_at))
         .bind(req.registration_closes_at.or(current.registration_closes_at))
         .bind(req.started_at.or(current.started_at))
@@ -218,6 +230,23 @@ impl EventRepository {
         .bind(id)
         .bind(status.to_string())
         .fetch_one(pool)
+        .await
+        .map_err(AppError::Database)
+    }
+
+    /// List stages open for registration (peserta-facing)
+    pub async fn list_available_stages(
+        pool: &PgPool,
+        event_id: Uuid,
+    ) -> Result<Vec<Stage>, AppError> {
+        sqlx::query_as::<_, Stage>(
+            "SELECT * FROM stages WHERE event_id = $1
+               AND (registration_opens_at IS NULL OR registration_opens_at <= now())
+               AND (registration_closes_at IS NULL OR registration_closes_at >= now())
+             ORDER BY sequence, name",
+        )
+        .bind(event_id)
+        .fetch_all(pool)
         .await
         .map_err(AppError::Database)
     }

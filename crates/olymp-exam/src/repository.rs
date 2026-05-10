@@ -317,11 +317,13 @@ impl ExamRepository {
     }
 
     /// Submit exam session — auto-score MCQ/true_false, calculate total
+    /// Submit session — marks as submitted, records completion time.
+    /// Actual scoring done async by worker via `score_session()`.
     pub async fn submit_session(
         pool: &PgPool,
         session_id: Uuid,
         auto: bool,
-    ) -> Result<ScoreResult, AppError> {
+    ) -> Result<ExamSession, AppError> {
         let session = Self::get_session(pool, session_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Session not found".into()))?;
@@ -339,12 +341,43 @@ impl ExamRepository {
         let now = Utc::now();
         let completion_time_secs = (now - started_at).num_seconds() as i32;
 
-        // Auto-score MCQ and true_false answers
+        sqlx::query_as::<_, ExamSession>(
+            "UPDATE exam_sessions SET status = 'submitted', finished_at = $2,
+             completion_time_secs = $3, is_auto_submitted = $4
+             WHERE id = $1 RETURNING *",
+        )
+        .bind(session_id)
+        .bind(now)
+        .bind(completion_time_secs)
+        .bind(auto)
+        .fetch_one(pool)
+        .await
+        .map_err(AppError::Database)
+    }
+
+    /// Score a submitted session — auto-scores MCQ/true_false, leaves essay NULL.
+    /// Called by background worker. Returns whether manual grading is needed.
+    pub async fn score_session(
+        pool: &PgPool,
+        session_id: Uuid,
+    ) -> Result<ScoreResult, AppError> {
+        let session = Self::get_session(pool, session_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Session not found".into()))?;
+
+        if session.status != "submitted" {
+            return Err(AppError::BadRequest(format!(
+                "Cannot score session in '{}' status",
+                session.status
+            )));
+        }
+
         let questions = Self::list_questions(pool, session.exam_id).await?;
         let answers = Self::list_answers(pool, session_id).await?;
 
         let mut total_score: f64 = 0.0;
         let mut correct_count: i32 = 0;
+        let mut needs_manual_grading = false;
         let max_score: f64 = questions.iter().map(|q| q.points).sum();
 
         for answer in &answers {
@@ -364,7 +397,6 @@ impl ExamRepository {
                         }
                         total_score += points;
 
-                        // Update answer record
                         sqlx::query(
                             "UPDATE answers SET is_correct = $2, points_earned = $3 WHERE id = $1",
                         )
@@ -376,7 +408,7 @@ impl ExamRepository {
                         .map_err(AppError::Database)?;
                     }
                     "essay" => {
-                        // Essay: keep points_earned NULL until manual grading
+                        needs_manual_grading = true;
                         if let Some(pts) = answer.points_earned {
                             total_score += pts;
                             if pts > 0.0 {
@@ -389,17 +421,19 @@ impl ExamRepository {
             }
         }
 
-        // Update session
+        let new_status = if needs_manual_grading {
+            "needs_grading"
+        } else {
+            "scored"
+        };
+
+        // Update session with score
         sqlx::query(
-            "UPDATE exam_sessions SET status = 'submitted', finished_at = $2,
-             score = $3, completion_time_secs = $4, is_auto_submitted = $5
-             WHERE id = $1",
+            "UPDATE exam_sessions SET status = $2, score = $3 WHERE id = $1",
         )
         .bind(session_id)
-        .bind(now)
+        .bind(new_status)
         .bind(total_score)
-        .bind(completion_time_secs)
-        .bind(auto)
         .execute(pool)
         .await
         .map_err(AppError::Database)?;
@@ -411,7 +445,7 @@ impl ExamRepository {
         )
         .bind(session.participant_stage_id)
         .bind(total_score)
-        .bind(completion_time_secs)
+        .bind(session.completion_time_secs.unwrap_or(0))
         .execute(pool)
         .await
         .map_err(AppError::Database)?;
@@ -420,9 +454,10 @@ impl ExamRepository {
             session_id,
             total_score,
             max_score,
-            completion_time_secs,
+            completion_time_secs: session.completion_time_secs.unwrap_or(0),
             correct_count,
             total_questions: questions.len() as i32,
+            needs_manual_grading,
         })
     }
 

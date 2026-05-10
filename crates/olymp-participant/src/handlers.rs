@@ -78,28 +78,29 @@ pub async fn register_participant(
         return e.into_response();
     }
 
-    // Check registration window on first stage (district tier)
-    let first_stage = match sqlx::query_as::<_, olymp_event::models::Stage>(
-        "SELECT * FROM stages WHERE event_id = $1 ORDER BY sequence ASC LIMIT 1",
+    // Check registration window on selected stage
+    let stage = match sqlx::query_as::<_, olymp_event::models::Stage>(
+        "SELECT * FROM stages WHERE id = $1 AND event_id = $2",
     )
+    .bind(req.stage_id)
     .bind(event_id)
     .fetch_optional(&pool)
     .await
     {
         Ok(Some(s)) => s,
         Ok(None) => {
-            return AppError::BadRequest("Event has no stages configured".into()).into_response();
+            return AppError::NotFound("Stage not found for this event".into()).into_response();
         }
         Err(e) => return AppError::Database(e).into_response(),
     };
 
     let now = chrono::Utc::now();
-    if let Some(opens) = first_stage.registration_opens_at {
+    if let Some(opens) = stage.registration_opens_at {
         if now < opens {
             return AppError::BadRequest("Registration has not opened yet".into()).into_response();
         }
     }
-    if let Some(closes) = first_stage.registration_closes_at {
+    if let Some(closes) = stage.registration_closes_at {
         if now > closes {
             return AppError::BadRequest("Registration has closed".into()).into_response();
         }

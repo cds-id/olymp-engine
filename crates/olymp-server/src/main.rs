@@ -94,6 +94,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/events", axum::routing::get(olymp_event::handlers::list_events).post(olymp_event::handlers::create_event))
         .route("/api/events/{id}", axum::routing::get(olymp_event::handlers::get_event).put(olymp_event::handlers::update_event))
         .route("/api/events/{event_id}/stages", axum::routing::get(olymp_event::handlers::list_stages).post(olymp_event::handlers::create_stage))
+        .route("/api/events/{event_id}/stages/available", axum::routing::get(olymp_event::handlers::list_available_stages))
         .route("/api/stages/{id}", axum::routing::put(olymp_event::handlers::update_stage))
         .route("/api/stages/{id}/status", axum::routing::put(olymp_event::handlers::update_stage_status))
         .route("/api/events/{event_id}/categories", axum::routing::get(olymp_event::handlers::list_event_categories).post(olymp_event::handlers::create_event_category))

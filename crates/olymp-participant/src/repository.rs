@@ -14,7 +14,31 @@ impl ParticipantRepository {
         event_id: Uuid,
         req: &RegisterParticipantRequest,
     ) -> Result<Participant, AppError> {
-        sqlx::query_as::<_, Participant>(
+        // Check stage capacity if set
+        let stage_capacity: Option<i32> = sqlx::query_scalar(
+            "SELECT capacity FROM stages WHERE id = $1",
+        )
+        .bind(req.stage_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(AppError::Database)?
+        .flatten();
+
+        if let Some(cap) = stage_capacity {
+            let enrolled: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM participant_stages WHERE stage_id = $1",
+            )
+            .bind(req.stage_id)
+            .fetch_one(pool)
+            .await
+            .map_err(AppError::Database)?;
+
+            if enrolled >= cap as i64 {
+                return Err(AppError::Conflict("Stage has reached maximum capacity".into()));
+            }
+        }
+
+        let participant = sqlx::query_as::<_, Participant>(
             "INSERT INTO participants (user_id, event_id, education_level_id, subject_id, school_name, district_id, province_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING *",
@@ -33,7 +57,21 @@ impl ParticipantRepository {
                 AppError::Conflict("Participant already registered for this event/subject".into())
             }
             other => AppError::Database(other),
-        })
+        })?;
+
+        // Auto-create participant_stage entry for chosen stage
+        sqlx::query(
+            "INSERT INTO participant_stages (participant_id, stage_id, status)
+             VALUES ($1, $2, 'registered')
+             ON CONFLICT (participant_id, stage_id) DO NOTHING",
+        )
+        .bind(participant.id)
+        .bind(req.stage_id)
+        .execute(pool)
+        .await
+        .map_err(AppError::Database)?;
+
+        Ok(participant)
     }
 
     pub async fn get_by_id(pool: &PgPool, id: Uuid) -> Result<Option<Participant>, AppError> {

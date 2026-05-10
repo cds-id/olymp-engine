@@ -68,6 +68,11 @@ pub struct Stage {
     pub tier: String,
     pub sequence: i32,
     pub status: String,
+    pub name: Option<String>,
+    pub location: Option<String>,
+    pub district_id: Option<Uuid>,
+    pub province_id: Option<Uuid>,
+    pub capacity: Option<i32>,
     pub registration_opens_at: Option<DateTime<Utc>>,
     pub registration_closes_at: Option<DateTime<Utc>>,
     pub started_at: Option<DateTime<Utc>>,
@@ -79,6 +84,11 @@ pub struct Stage {
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateStageRequest {
     pub tier: Tier,
+    pub name: Option<String>,
+    pub location: Option<String>,
+    pub district_id: Option<Uuid>,
+    pub province_id: Option<Uuid>,
+    pub capacity: Option<i32>,
     pub registration_opens_at: Option<DateTime<Utc>>,
     pub registration_closes_at: Option<DateTime<Utc>>,
     pub started_at: Option<DateTime<Utc>>,
@@ -92,6 +102,11 @@ pub struct UpdateStageStatusRequest {
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateStageRequest {
+    pub name: Option<String>,
+    pub location: Option<String>,
+    pub district_id: Option<Uuid>,
+    pub province_id: Option<Uuid>,
+    pub capacity: Option<i32>,
     pub registration_opens_at: Option<DateTime<Utc>>,
     pub registration_closes_at: Option<DateTime<Utc>>,
     pub started_at: Option<DateTime<Utc>>,

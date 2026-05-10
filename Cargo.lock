@@ -1999,6 +1999,7 @@ dependencies = [
  "chrono",
  "olymp-auth",
  "olymp-core",
+ "olymp-exam",
  "redis",
  "serde",
  "serde_json",

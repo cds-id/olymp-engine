@@ -190,4 +190,6 @@ pub struct ScoreResult {
     pub completion_time_secs: i32,
     pub correct_count: i32,
     pub total_questions: i32,
+    /// True if exam contains essay questions needing manual grading
+    pub needs_manual_grading: bool,
 }
