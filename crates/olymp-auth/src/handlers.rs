@@ -93,7 +93,7 @@ pub struct UpdateProfileRequest {
     tag = "auth",
     request_body = MagicLinkRequest,
     responses(
-        (status = 200, description = "Magic link sent", body = MagicLinkResponse),
+        (status = 200, description = "Magic link sent", body = inline(ApiResponse<MagicLinkResponse>)),
         (status = 400, description = "Bad request")
     )
 )]
@@ -139,7 +139,7 @@ pub async fn request_magic_link(
     tag = "auth",
     request_body = CallbackRequest,
     responses(
-        (status = 200, description = "Authentication successful", body = AuthResponse),
+        (status = 200, description = "Authentication successful", body = inline(ApiResponse<AuthResponse>)),
         (status = 401, description = "Invalid token")
     )
 )]
@@ -183,7 +183,7 @@ pub async fn magic_link_callback(
     tag = "auth",
     request_body = RegisterRequest,
     responses(
-        (status = 200, description = "Registration successful", body = AuthResponse),
+        (status = 200, description = "Registration successful", body = inline(ApiResponse<AuthResponse>)),
         (status = 400, description = "Validation error")
     )
 )]
@@ -237,7 +237,7 @@ pub async fn register(
     tag = "auth",
     request_body = LoginRequest,
     responses(
-        (status = 200, description = "Login successful", body = AuthResponse),
+        (status = 200, description = "Login successful", body = inline(ApiResponse<AuthResponse>)),
         (status = 401, description = "Invalid credentials")
     )
 )]
@@ -288,7 +288,7 @@ pub async fn login(
     path = "/api/users/me",
     tag = "auth",
     responses(
-        (status = 200, description = "User profile", body = UserProfile),
+        (status = 200, description = "User profile", body = inline(ApiResponse<UserProfile>)),
         (status = 401, description = "Unauthorized")
     ),
     security(("bearer" = []))
@@ -311,7 +311,7 @@ pub async fn me(
     tag = "auth",
     request_body = UpdateProfileRequest,
     responses(
-        (status = 200, description = "Profile updated", body = UserProfile),
+        (status = 200, description = "Profile updated", body = inline(ApiResponse<UserProfile>)),
         (status = 401, description = "Unauthorized")
     ),
     security(("bearer" = []))
@@ -465,7 +465,7 @@ pub async fn change_password(
     tag = "auth",
     request_body = RefreshRequest,
     responses(
-        (status = 200, description = "Token refreshed", body = AuthResponse),
+        (status = 200, description = "Token refreshed", body = inline(ApiResponse<AuthResponse>)),
         (status = 401, description = "Invalid refresh token")
     )
 )]
@@ -513,7 +513,7 @@ pub async fn refresh(
     path = "/api/users/me/notifications",
     tag = "auth",
     responses(
-        (status = 200, description = "Notification preferences", body = NotificationPreferences),
+        (status = 200, description = "Notification preferences", body = inline(ApiResponse<NotificationPreferences>)),
         (status = 401, description = "Unauthorized")
     ),
     security(("bearer" = []))
@@ -535,7 +535,7 @@ pub async fn get_notifications(
     tag = "auth",
     request_body = UpdateNotificationPreferences,
     responses(
-        (status = 200, description = "Preferences updated", body = NotificationPreferences),
+        (status = 200, description = "Preferences updated", body = inline(ApiResponse<NotificationPreferences>)),
         (status = 401, description = "Unauthorized")
     ),
     security(("bearer" = []))

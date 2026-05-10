@@ -9,6 +9,7 @@ use uuid::Uuid;
 
 use crate::models::*;
 use crate::repository::RegionRepository;
+use olymp_core::auth::AuthContext;
 use olymp_core::response::{ApiResponse, WithStatus};
 use olymp_core::AppError;
 
@@ -19,10 +20,13 @@ use olymp_core::AppError;
     path = "/api/provinces",
     tag = "regions",
     responses(
-        (status = 200, description = "List of provinces", body = Vec<Province>)
+        (status = 200, description = "List of provinces", body = inline(ApiResponse<Vec<Province>>))
     )
 )]
-pub async fn list_provinces(State(pool): State<PgPool>) -> Response {
+pub async fn list_provinces(auth: AuthContext, State(pool): State<PgPool>) -> Response {
+    if let Err(e) = auth.require("region.view") {
+        return e.into_response();
+    }
     match RegionRepository::list_provinces(&pool).await {
         Ok(provinces) => ApiResponse::success(provinces).into_response(),
         Err(e) => e.into_response(),
@@ -35,11 +39,18 @@ pub async fn list_provinces(State(pool): State<PgPool>) -> Response {
     tag = "regions",
     params(("id" = Uuid, Path, description = "Province ID")),
     responses(
-        (status = 200, description = "Province details", body = Province),
+        (status = 200, description = "Province details", body = inline(ApiResponse<Province>)),
         (status = 404, description = "Not found")
     )
 )]
-pub async fn get_province(State(pool): State<PgPool>, Path(id): Path<Uuid>) -> Response {
+pub async fn get_province(
+    auth: AuthContext,
+    State(pool): State<PgPool>,
+    Path(id): Path<Uuid>,
+) -> Response {
+    if let Err(e) = auth.require("region.view") {
+        return e.into_response();
+    }
     match RegionRepository::get_province(&pool, id).await {
         Ok(Some(p)) => ApiResponse::success(p).into_response(),
         Ok(None) => AppError::NotFound("Province not found".into()).into_response(),
@@ -53,14 +64,18 @@ pub async fn get_province(State(pool): State<PgPool>, Path(id): Path<Uuid>) -> R
     tag = "regions",
     request_body = CreateProvinceRequest,
     responses(
-        (status = 201, description = "Province created", body = Province),
+        (status = 201, description = "Province created", body = inline(ApiResponse<Province>)),
         (status = 400, description = "Bad request")
     )
 )]
 pub async fn create_province(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Json(req): Json<CreateProvinceRequest>,
 ) -> Response {
+    if let Err(e) = auth.require("region.manage") {
+        return e.into_response();
+    }
     match RegionRepository::create_province(&pool, &req.name).await {
         Ok(p) => WithStatus(StatusCode::CREATED, ApiResponse::success(p)).into_response(),
         Err(e) => e.into_response(),
@@ -75,13 +90,17 @@ pub async fn create_province(
     tag = "regions",
     params(("province_id" = Uuid, Path, description = "Province ID")),
     responses(
-        (status = 200, description = "List of districts in province", body = Vec<District>)
+        (status = 200, description = "List of districts in province", body = inline(ApiResponse<Vec<District>>))
     )
 )]
 pub async fn list_districts(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(province_id): Path<Uuid>,
 ) -> Response {
+    if let Err(e) = auth.require("region.view") {
+        return e.into_response();
+    }
     match RegionRepository::list_districts(&pool, province_id).await {
         Ok(districts) => ApiResponse::success(districts).into_response(),
         Err(e) => e.into_response(),
@@ -95,15 +114,19 @@ pub async fn list_districts(
     params(("province_id" = Uuid, Path, description = "Province ID")),
     request_body = CreateDistrictRequest,
     responses(
-        (status = 201, description = "District created", body = District),
+        (status = 201, description = "District created", body = inline(ApiResponse<District>)),
         (status = 400, description = "Bad request")
     )
 )]
 pub async fn create_district(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(province_id): Path<Uuid>,
     Json(req): Json<CreateDistrictRequest>,
 ) -> Response {
+    if let Err(e) = auth.require("region.manage") {
+        return e.into_response();
+    }
     match RegionRepository::create_district(&pool, province_id, &req.name).await {
         Ok(d) => WithStatus(StatusCode::CREATED, ApiResponse::success(d)).into_response(),
         Err(e) => e.into_response(),

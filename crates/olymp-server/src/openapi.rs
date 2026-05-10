@@ -2,6 +2,7 @@ use utoipa::OpenApi;
 use olymp_auth::handlers::*;
 use olymp_auth::notifications::{NotificationPreferences, UpdateNotificationPreferences};
 use olymp_auth::user::UserProfile;
+use olymp_core::response::{ApiErrorBody, Meta};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -168,6 +169,7 @@ use olymp_auth::user::UserProfile;
             olymp_exam::models::QuestionForParticipant,
             olymp_exam::models::ExamSession,
             olymp_exam::models::Answer,
+            olymp_exam::models::AnswerForParticipant,
             olymp_exam::models::CreateExamRequest,
             olymp_exam::models::UpdateExamRequest,
             olymp_exam::models::CreateQuestionRequest,
@@ -202,6 +204,9 @@ use olymp_auth::user::UserProfile;
             olymp_certificate::models::UpdateTemplateRequest,
             olymp_certificate::models::GenerateCertificatesRequest,
             olymp_certificate::models::GenerationResult,
+            // Standard response envelope
+            ApiErrorBody,
+            Meta,
         )
     ),
     tags(

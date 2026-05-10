@@ -92,6 +92,23 @@ impl ExamRepository {
         .map_err(AppError::Database)
     }
 
+    pub async fn list_questions_paginated(
+        pool: &PgPool,
+        exam_id: Uuid,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Question>, AppError> {
+        sqlx::query_as::<_, Question>(
+            "SELECT * FROM questions WHERE exam_id = $1 ORDER BY sequence LIMIT $2 OFFSET $3",
+        )
+        .bind(exam_id)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(pool)
+        .await
+        .map_err(AppError::Database)
+    }
+
     pub async fn create_question(
         pool: &PgPool,
         exam_id: Uuid,
@@ -324,6 +341,27 @@ impl ExamRepository {
             correct_count,
             total_questions: questions.len() as i32,
         })
+    }
+
+    /// Check if user owns session (through participant → participant_stage → session)
+    pub async fn user_owns_session(
+        pool: &PgPool,
+        user_id: Uuid,
+        session_id: Uuid,
+    ) -> Result<bool, AppError> {
+        sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(
+                SELECT 1 FROM exam_sessions es
+                JOIN participant_stages ps ON ps.id = es.participant_stage_id
+                JOIN participants p ON p.id = ps.participant_id
+                WHERE es.id = $1 AND p.user_id = $2
+            )",
+        )
+        .bind(session_id)
+        .bind(user_id)
+        .fetch_one(pool)
+        .await
+        .map_err(AppError::Database)
     }
 
     // ─── Answers ───

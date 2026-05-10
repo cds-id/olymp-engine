@@ -9,16 +9,11 @@ use uuid::Uuid;
 
 use crate::models::*;
 use crate::repository::ParticipantRepository;
-use olymp_core::response::{ApiResponse, WithStatus};
-
+use olymp_core::auth::AuthContext;
+use olymp_core::response::{ApiResponse, Meta, WithStatus};
+use olymp_core::types::ListParams;
 
 // ─── List participants by event ───
-
-#[derive(Debug, serde::Deserialize)]
-pub struct ListParams {
-    pub per_page: Option<i64>,
-    pub offset: Option<i64>,
-}
 
 #[utoipa::path(
     get,
@@ -26,23 +21,35 @@ pub struct ListParams {
     tag = "participants",
     params(
         ("event_id" = Uuid, Path, description = "Event ID"),
-        ("per_page" = Option<i64>, Query, description = "Items per page"),
-        ("offset" = Option<i64>, Query, description = "Offset"),
+        ListParams,
     ),
     responses(
-        (status = 200, description = "List of participants", body = Vec<Participant>),
+        (status = 200, description = "Paginated list of participants", body = inline(ApiResponse<Vec<Participant>>)),
     )
 )]
 pub async fn list_event_participants(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(event_id): Path<Uuid>,
     Query(params): Query<ListParams>,
 ) -> Response {
-    let per_page = params.per_page.unwrap_or(20).min(100);
-    let offset = params.offset.unwrap_or(0);
-
-    match ParticipantRepository::list_by_event(&pool, event_id, per_page, offset).await {
-        Ok(participants) => ApiResponse::success(participants).into_response(),
+    if let Err(e) = auth.require("participant.view") {
+        return e.into_response();
+    }
+    let total = match ParticipantRepository::count_by_event(&pool, event_id).await {
+        Ok(t) => t,
+        Err(e) => return e.into_response(),
+    };
+    match ParticipantRepository::list_by_event(&pool, event_id, params.limit(), params.offset())
+        .await
+    {
+        Ok(participants) => ApiResponse::success(participants)
+            .with_meta(Meta::paginated(
+                params.page(),
+                params.per_page(),
+                total as u64,
+            ))
+            .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -56,15 +63,19 @@ pub async fn list_event_participants(
     params(("event_id" = Uuid, Path, description = "Event ID")),
     request_body = RegisterParticipantRequest,
     responses(
-        (status = 201, description = "Participant registered", body = Participant),
+        (status = 201, description = "Participant registered", body = inline(ApiResponse<Participant>)),
         (status = 409, description = "Already registered"),
     )
 )]
 pub async fn register_participant(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(event_id): Path<Uuid>,
     Json(req): Json<RegisterParticipantRequest>,
 ) -> Response {
+    if let Err(e) = auth.require("participant.create") {
+        return e.into_response();
+    }
     match ParticipantRepository::register(&pool, event_id, &req).await {
         Ok(participant) => {
             WithStatus(StatusCode::CREATED, ApiResponse::success(participant)).into_response()
@@ -81,14 +92,18 @@ pub async fn register_participant(
     tag = "participants",
     params(("id" = Uuid, Path, description = "Participant ID")),
     responses(
-        (status = 200, description = "Participant detail with stages", body = ParticipantDetail),
+        (status = 200, description = "Participant detail with stages", body = inline(ApiResponse<ParticipantDetail>)),
         (status = 404, description = "Not found"),
     )
 )]
 pub async fn get_participant(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(id): Path<Uuid>,
 ) -> Response {
+    if let Err(e) = auth.require("participant.view") {
+        return e.into_response();
+    }
     let participant = match ParticipantRepository::get_by_id(&pool, id).await {
         Ok(Some(p)) => p,
         Ok(None) => {
@@ -118,15 +133,19 @@ pub async fn get_participant(
     params(("id" = Uuid, Path, description = "Participant ID")),
     request_body = UpdateParticipantRequest,
     responses(
-        (status = 200, description = "Participant updated", body = Participant),
+        (status = 200, description = "Participant updated", body = inline(ApiResponse<Participant>)),
         (status = 404, description = "Not found"),
     )
 )]
 pub async fn update_participant(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(id): Path<Uuid>,
     Json(req): Json<UpdateParticipantRequest>,
 ) -> Response {
+    if let Err(e) = auth.require("participant.update") {
+        return e.into_response();
+    }
     match ParticipantRepository::update(&pool, id, &req).await {
         Ok(p) => ApiResponse::success(p).into_response(),
         Err(e) => e.into_response(),
@@ -141,15 +160,19 @@ pub async fn update_participant(
     tag = "participants",
     params(("id" = Uuid, Path, description = "Participant ID")),
     responses(
-        (status = 200, description = "Participant verified", body = ParticipantStage),
+        (status = 200, description = "Participant verified", body = inline(ApiResponse<ParticipantStage>)),
         (status = 400, description = "Invalid transition"),
         (status = 404, description = "Not found"),
     )
 )]
 pub async fn verify_participant(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(id): Path<Uuid>,
 ) -> Response {
+    if let Err(e) = auth.require("participant.verify") {
+        return e.into_response();
+    }
     transition_first_stage(&pool, id, "verified").await
 }
 
@@ -161,15 +184,19 @@ pub async fn verify_participant(
     tag = "participants",
     params(("id" = Uuid, Path, description = "Participant ID")),
     responses(
-        (status = 200, description = "Participant approved", body = ParticipantStage),
+        (status = 200, description = "Participant approved", body = inline(ApiResponse<ParticipantStage>)),
         (status = 400, description = "Invalid transition"),
         (status = 404, description = "Not found"),
     )
 )]
 pub async fn approve_participant(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(id): Path<Uuid>,
 ) -> Response {
+    if let Err(e) = auth.require("participant.approve") {
+        return e.into_response();
+    }
     transition_first_stage(&pool, id, "assigned_to_exam").await
 }
 
@@ -181,15 +208,19 @@ pub async fn approve_participant(
     tag = "participants",
     params(("id" = Uuid, Path, description = "Participant ID")),
     responses(
-        (status = 200, description = "Participant rejected", body = ParticipantStage),
+        (status = 200, description = "Participant rejected", body = inline(ApiResponse<ParticipantStage>)),
         (status = 400, description = "Invalid transition"),
         (status = 404, description = "Not found"),
     )
 )]
 pub async fn reject_participant(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(id): Path<Uuid>,
 ) -> Response {
+    if let Err(e) = auth.require("participant.reject") {
+        return e.into_response();
+    }
     transition_first_stage(&pool, id, "disqualified").await
 }
 
@@ -201,37 +232,51 @@ pub async fn reject_participant(
     tag = "participants",
     params(
         ("stage_id" = Uuid, Path, description = "Stage ID"),
-        ("per_page" = Option<i64>, Query, description = "Items per page"),
-        ("offset" = Option<i64>, Query, description = "Offset"),
+        ListParams,
     ),
     responses(
-        (status = 200, description = "List of participants for stage", body = Vec<ParticipantListItem>),
+        (status = 200, description = "Paginated list of participants for stage", body = inline(ApiResponse<Vec<ParticipantListItem>>)),
     )
 )]
 pub async fn list_stage_participants(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(stage_id): Path<Uuid>,
     Query(params): Query<ListParams>,
 ) -> Response {
-    let per_page = params.per_page.unwrap_or(20).min(100);
-    let offset = params.offset.unwrap_or(0);
-
-    match ParticipantRepository::list_by_stage(&pool, stage_id, per_page, offset).await {
-        Ok(items) => ApiResponse::success(items).into_response(),
+    if let Err(e) = auth.require("participant.view") {
+        return e.into_response();
+    }
+    let total = match ParticipantRepository::count_by_stage(&pool, stage_id).await {
+        Ok(t) => t,
+        Err(e) => return e.into_response(),
+    };
+    match ParticipantRepository::list_by_stage(&pool, stage_id, params.limit(), params.offset())
+        .await
+    {
+        Ok(items) => ApiResponse::success(items)
+            .with_meta(Meta::paginated(
+                params.page(),
+                params.per_page(),
+                total as u64,
+            ))
+            .into_response(),
         Err(e) => e.into_response(),
     }
 }
 
 // ─── Helper: transition first/current stage ───
 
-async fn transition_first_stage(pool: &PgPool, participant_id: Uuid, new_status: &str) -> Response {
-    // Get participant's stages, find first actionable one
+async fn transition_first_stage(
+    pool: &PgPool,
+    participant_id: Uuid,
+    new_status: &str,
+) -> Response {
     let stages = match ParticipantRepository::get_participant_stages(pool, participant_id).await {
         Ok(s) => s,
         Err(e) => return e.into_response(),
     };
 
-    // Find stage that can transition to new_status
     let stage = stages.iter().find(|s| s.can_transition_to(new_status));
 
     match stage {

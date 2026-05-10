@@ -66,8 +66,10 @@ pub struct AuditLogQuery {
     pub resource_type: Option<String>,
     pub resource_id: Option<Uuid>,
     pub event_id: Option<Uuid>,
-    pub limit: Option<i64>,
-    pub offset: Option<i64>,
+    /// Page number (1-based, default: 1)
+    pub page: Option<u32>,
+    /// Items per page (default: 20, max: 100)
+    pub per_page: Option<u32>,
 }
 
 // ─── SSE Event ───

@@ -1,22 +1,23 @@
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde::Serialize;
+use utoipa::ToSchema;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ApiResponse<T: Serialize> {
     pub data: Option<T>,
     pub error: Option<ApiErrorBody>,
     pub meta: Option<Meta>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ApiErrorBody {
     pub code: String,
     pub message: String,
     pub details: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct Meta {
     pub page: Option<u32>,
     pub per_page: Option<u32>,

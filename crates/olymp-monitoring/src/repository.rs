@@ -38,6 +38,23 @@ impl MonitoringRepository {
         .map_err(AppError::Database)
     }
 
+    pub async fn list_cheating_logs_paginated(
+        pool: &PgPool,
+        session_id: Uuid,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<CheatingLog>, AppError> {
+        sqlx::query_as::<_, CheatingLog>(
+            "SELECT * FROM cheating_logs WHERE exam_session_id = $1 ORDER BY occurred_at LIMIT $2 OFFSET $3",
+        )
+        .bind(session_id)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(pool)
+        .await
+        .map_err(AppError::Database)
+    }
+
     pub async fn count_cheating_logs(
         pool: &PgPool,
         session_id: Uuid,
@@ -127,12 +144,46 @@ impl MonitoringRepository {
         .map_err(AppError::Database)
     }
 
+    pub async fn count_audit_logs(
+        pool: &PgPool,
+        query: &AuditLogQuery,
+    ) -> Result<i64, AppError> {
+        let mut sql = String::from("SELECT COUNT(*) FROM audit_logs WHERE 1=1");
+        let mut param_idx = 1u32;
+
+        if query.actor_id.is_some() {
+            sql.push_str(&format!(" AND actor_id = ${param_idx}"));
+            param_idx += 1;
+        }
+        if query.resource_type.is_some() {
+            sql.push_str(&format!(" AND resource_type = ${param_idx}"));
+            param_idx += 1;
+        }
+        if query.resource_id.is_some() {
+            sql.push_str(&format!(" AND resource_id = ${param_idx}"));
+            param_idx += 1;
+        }
+        if query.event_id.is_some() {
+            sql.push_str(&format!(" AND event_id = ${param_idx}"));
+        }
+
+        let mut q = sqlx::query_scalar::<_, i64>(&sql);
+        if let Some(v) = query.actor_id { q = q.bind(v); }
+        if let Some(ref v) = query.resource_type { q = q.bind(v); }
+        if let Some(v) = query.resource_id { q = q.bind(v); }
+        if let Some(v) = query.event_id { q = q.bind(v); }
+
+        q.fetch_one(pool).await.map_err(AppError::Database)
+    }
+
     pub async fn query_audit_logs(
         pool: &PgPool,
         query: &AuditLogQuery,
     ) -> Result<Vec<AuditLog>, AppError> {
-        let limit = query.limit.unwrap_or(50).min(200);
-        let offset = query.offset.unwrap_or(0);
+        let per_page = query.per_page.unwrap_or(20).min(100).max(1);
+        let page = query.page.unwrap_or(1).max(1);
+        let limit = per_page as i64;
+        let offset = ((page - 1) * per_page) as i64;
 
         // Build dynamic query with optional filters
         let mut sql = String::from("SELECT * FROM audit_logs WHERE 1=1");

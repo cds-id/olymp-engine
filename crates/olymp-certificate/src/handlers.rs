@@ -9,6 +9,7 @@ use uuid::Uuid;
 
 use crate::models::*;
 use crate::repository::CertificateRepository;
+use olymp_core::auth::AuthContext;
 use olymp_core::response::{ApiResponse, WithStatus};
 
 // ─── Templates ───
@@ -20,14 +21,18 @@ use olymp_core::response::{ApiResponse, WithStatus};
     params(("event_id" = Uuid, Path, description = "Event ID")),
     request_body = CreateTemplateRequest,
     responses(
-        (status = 201, description = "Template created", body = CertificateTemplate),
+        (status = 201, description = "Template created", body = inline(ApiResponse<CertificateTemplate>)),
     )
 )]
 pub async fn create_template(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(event_id): Path<Uuid>,
     Json(req): Json<CreateTemplateRequest>,
 ) -> Response {
+    if let Err(e) = auth.require("certificate.generate") {
+        return e.into_response();
+    }
     match CertificateRepository::create_template(&pool, event_id, &req).await {
         Ok(t) => WithStatus(StatusCode::CREATED, ApiResponse::success(t)).into_response(),
         Err(e) => e.into_response(),
@@ -40,13 +45,17 @@ pub async fn create_template(
     tag = "certificates",
     params(("event_id" = Uuid, Path, description = "Event ID")),
     responses(
-        (status = 200, description = "List of templates", body = Vec<CertificateTemplate>),
+        (status = 200, description = "List of templates", body = inline(ApiResponse<Vec<CertificateTemplate>>)),
     )
 )]
 pub async fn list_templates(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(event_id): Path<Uuid>,
 ) -> Response {
+    if let Err(e) = auth.require("certificate.view") {
+        return e.into_response();
+    }
     match CertificateRepository::list_templates(&pool, event_id).await {
         Ok(list) => ApiResponse::success(list).into_response(),
         Err(e) => e.into_response(),
@@ -59,14 +68,18 @@ pub async fn list_templates(
     tag = "certificates",
     params(("template_id" = Uuid, Path, description = "Template ID")),
     responses(
-        (status = 200, description = "Template details", body = CertificateTemplate),
+        (status = 200, description = "Template details", body = inline(ApiResponse<CertificateTemplate>)),
         (status = 404, description = "Not found")
     )
 )]
 pub async fn get_template(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(template_id): Path<Uuid>,
 ) -> Response {
+    if let Err(e) = auth.require("certificate.view") {
+        return e.into_response();
+    }
     match CertificateRepository::get_template(&pool, template_id).await {
         Ok(Some(t)) => ApiResponse::success(t).into_response(),
         Ok(None) => {
@@ -83,15 +96,19 @@ pub async fn get_template(
     params(("template_id" = Uuid, Path, description = "Template ID")),
     request_body = UpdateTemplateRequest,
     responses(
-        (status = 200, description = "Template updated", body = CertificateTemplate),
+        (status = 200, description = "Template updated", body = inline(ApiResponse<CertificateTemplate>)),
         (status = 404, description = "Not found")
     )
 )]
 pub async fn update_template(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(template_id): Path<Uuid>,
     Json(req): Json<UpdateTemplateRequest>,
 ) -> Response {
+    if let Err(e) = auth.require("certificate.generate") {
+        return e.into_response();
+    }
     match CertificateRepository::update_template(&pool, template_id, &req).await {
         Ok(t) => ApiResponse::success(t).into_response(),
         Err(e) => e.into_response(),
@@ -107,15 +124,19 @@ pub async fn update_template(
     params(("stage_id" = Uuid, Path, description = "Stage ID")),
     request_body = GenerateCertificatesRequest,
     responses(
-        (status = 201, description = "Certificates generated", body = GenerationResult),
+        (status = 201, description = "Certificates generated", body = inline(ApiResponse<GenerationResult>)),
         (status = 404, description = "No template for stage")
     )
 )]
 pub async fn generate_certificates(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(stage_id): Path<Uuid>,
     Json(req): Json<GenerateCertificatesRequest>,
 ) -> Response {
+    if let Err(e) = auth.require("certificate.generate") {
+        return e.into_response();
+    }
     match CertificateRepository::generate_for_stage(&pool, stage_id, &req).await {
         Ok(result) => {
             WithStatus(StatusCode::CREATED, ApiResponse::success(result)).into_response()
@@ -132,13 +153,17 @@ pub async fn generate_certificates(
     tag = "certificates",
     params(("participant_id" = Uuid, Path, description = "Participant ID")),
     responses(
-        (status = 200, description = "List of certificates for participant", body = Vec<Certificate>),
+        (status = 200, description = "List of certificates for participant", body = inline(ApiResponse<Vec<Certificate>>)),
     )
 )]
 pub async fn list_participant_certificates(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(participant_id): Path<Uuid>,
 ) -> Response {
+    if let Err(e) = auth.require("certificate.view") {
+        return e.into_response();
+    }
     match CertificateRepository::list_by_participant(&pool, participant_id).await {
         Ok(list) => ApiResponse::success(list).into_response(),
         Err(e) => e.into_response(),
@@ -151,14 +176,18 @@ pub async fn list_participant_certificates(
     tag = "certificates",
     params(("certificate_id" = Uuid, Path, description = "Certificate ID")),
     responses(
-        (status = 200, description = "Certificate details", body = Certificate),
+        (status = 200, description = "Certificate details", body = inline(ApiResponse<Certificate>)),
         (status = 404, description = "Not found")
     )
 )]
 pub async fn get_certificate(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(certificate_id): Path<Uuid>,
 ) -> Response {
+    if let Err(e) = auth.require("certificate.view") {
+        return e.into_response();
+    }
     match CertificateRepository::get_certificate(&pool, certificate_id).await {
         Ok(Some(c)) => ApiResponse::success(c).into_response(),
         Ok(None) => {
@@ -181,11 +210,18 @@ pub async fn get_certificate(
     )
 )]
 pub async fn finalize_event(
+    auth: AuthContext,
     State(pool): State<PgPool>,
     Path(event_id): Path<Uuid>,
 ) -> Response {
+    if let Err(e) = auth.require("olympiad.master.update") {
+        return e.into_response();
+    }
     match CertificateRepository::finalize_event(&pool, event_id).await {
-        Ok(()) => ApiResponse::success(serde_json::json!({"status": "finalized", "event_id": event_id})).into_response(),
+        Ok(()) => ApiResponse::success(
+            serde_json::json!({"status": "finalized", "event_id": event_id}),
+        )
+        .into_response(),
         Err(e) => e.into_response(),
     }
 }

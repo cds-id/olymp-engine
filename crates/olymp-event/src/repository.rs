@@ -66,9 +66,20 @@ impl EventRepository {
 
     // ─── Events ───
 
-    pub async fn list_events(pool: &PgPool) -> Result<Vec<Event>, AppError> {
-        sqlx::query_as::<_, Event>("SELECT * FROM events ORDER BY created_at DESC")
-            .fetch_all(pool)
+    pub async fn list_events(pool: &PgPool, limit: i64, offset: i64) -> Result<Vec<Event>, AppError> {
+        sqlx::query_as::<_, Event>(
+            "SELECT * FROM events ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+        )
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(pool)
+        .await
+        .map_err(AppError::Database)
+    }
+
+    pub async fn count_events(pool: &PgPool) -> Result<i64, AppError> {
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM events")
+            .fetch_one(pool)
             .await
             .map_err(AppError::Database)
     }

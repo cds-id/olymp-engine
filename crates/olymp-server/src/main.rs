@@ -1,3 +1,4 @@
+mod middleware;
 mod openapi;
 
 use olymp_auth::handlers::*;
@@ -99,7 +100,7 @@ async fn main() -> anyhow::Result<()> {
     // RBAC routes (State<RbacState>)
     let rbac_state = olymp_rbac::handlers::RbacState {
         pool: db_pool.clone(),
-        redis: redis_client,
+        redis: redis_client.clone(),
     };
     let rbac_routes = axum::Router::new()
         .route("/api/rbac/roles", axum::routing::get(olymp_rbac::handlers::list_roles).post(olymp_rbac::handlers::create_role))
@@ -179,6 +180,14 @@ async fn main() -> anyhow::Result<()> {
         app = app.merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", openapi::ApiDoc::openapi()));
     }
 
+    // Auth middleware
+    let auth_state = middleware::AuthState {
+        db: db_pool.clone(),
+        redis: redis_client.clone(),
+        jwt_secret: config.auth.jwt_secret.clone(),
+        jwt_access_ttl_secs: config.auth.jwt_access_ttl_secs,
+    };
+
     // CORS
     let cors = tower_http::cors::CorsLayer::new()
         .allow_origin(
@@ -202,7 +211,9 @@ async fn main() -> anyhow::Result<()> {
         .allow_credentials(true)
         .max_age(std::time::Duration::from_secs(3600));
 
-    let app = app.layer(cors);
+    let app = app
+        .layer(axum::middleware::from_fn_with_state(auth_state, middleware::auth_middleware))
+        .layer(cors);
 
     let listener = TcpListener::bind(&config.server.bind_addr).await?;
     tracing::info!("Listening on {} (CORS origin: {})", config.server.bind_addr, config.app.url);

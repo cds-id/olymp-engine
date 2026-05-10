@@ -83,6 +83,28 @@ pub struct Answer {
     pub answered_at: DateTime<Utc>,
 }
 
+/// Answer without grading info — served to participants during active sessions
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
+pub struct AnswerForParticipant {
+    pub id: Uuid,
+    pub exam_session_id: Uuid,
+    pub question_id: Uuid,
+    pub answer_data: Option<serde_json::Value>,
+    pub answered_at: DateTime<Utc>,
+}
+
+impl From<Answer> for AnswerForParticipant {
+    fn from(a: Answer) -> Self {
+        Self {
+            id: a.id,
+            exam_session_id: a.exam_session_id,
+            question_id: a.question_id,
+            answer_data: a.answer_data,
+            answered_at: a.answered_at,
+        }
+    }
+}
+
 // ─── Request DTOs ───
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]

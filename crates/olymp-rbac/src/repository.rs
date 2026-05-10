@@ -129,6 +129,28 @@ impl RbacRepository {
         .map_err(AppError::Database)
     }
 
+    pub async fn list_assignments_paginated(
+        pool: &PgPool,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<UserRoleAssignment>, AppError> {
+        sqlx::query_as::<_, UserRoleAssignment>(
+            "SELECT * FROM user_role_assignments ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+        )
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(pool)
+        .await
+        .map_err(AppError::Database)
+    }
+
+    pub async fn count_assignments(pool: &PgPool) -> Result<i64, AppError> {
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM user_role_assignments")
+            .fetch_one(pool)
+            .await
+            .map_err(AppError::Database)
+    }
+
     pub async fn list_user_assignments(
         pool: &PgPool,
         user_id: Uuid,

@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
+use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
 
 // ─── Pagination ───
 
-#[derive(Debug, Clone, Deserialize, Validate)]
+#[derive(Debug, Clone, Deserialize, Validate, ToSchema)]
 pub struct PaginationParams {
     #[validate(range(min = 1, max = 100))]
     pub per_page: Option<u32>,
@@ -13,6 +14,35 @@ pub struct PaginationParams {
 impl PaginationParams {
     pub fn per_page_or_default(&self) -> u32 {
         self.per_page.unwrap_or(20)
+    }
+}
+
+/// Standard offset-based pagination query params for list endpoints.
+#[derive(Debug, Clone, Deserialize, IntoParams)]
+pub struct ListParams {
+    /// Page number (1-based, default: 1)
+    #[param(minimum = 1)]
+    pub page: Option<u32>,
+    /// Items per page (default: 20, max: 100)
+    #[param(minimum = 1, maximum = 100)]
+    pub per_page: Option<u32>,
+}
+
+impl ListParams {
+    pub fn page(&self) -> u32 {
+        self.page.unwrap_or(1).max(1)
+    }
+
+    pub fn per_page(&self) -> u32 {
+        self.per_page.unwrap_or(20).min(100).max(1)
+    }
+
+    pub fn offset(&self) -> i64 {
+        ((self.page() - 1) * self.per_page()) as i64
+    }
+
+    pub fn limit(&self) -> i64 {
+        self.per_page() as i64
     }
 }
 

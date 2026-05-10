@@ -8,14 +8,15 @@ use axum::{
     Json,
 };
 use sqlx::PgPool;
-use std::convert::Infallible;
 use tokio::sync::broadcast;
 use tokio_stream::{wrappers::BroadcastStream, StreamExt};
 use uuid::Uuid;
 
 use crate::models::*;
 use crate::repository::MonitoringRepository;
-use olymp_core::response::{ApiResponse, WithStatus};
+use olymp_core::auth::AuthContext;
+use olymp_core::response::{ApiResponse, Meta, WithStatus};
+use olymp_core::types::ListParams;
 
 /// Shared state for monitoring SSE
 #[derive(Clone)]
@@ -32,13 +33,17 @@ pub struct MonitoringState {
     tag = "monitoring",
     request_body = CreateCheatingLogRequest,
     responses(
-        (status = 201, description = "Cheating log recorded", body = CheatingLog),
+        (status = 201, description = "Cheating log recorded", body = inline(ApiResponse<CheatingLog>)),
     )
 )]
 pub async fn create_cheating_log(
+    auth: AuthContext,
     State(state): State<MonitoringState>,
     Json(req): Json<CreateCheatingLogRequest>,
 ) -> Response {
+    if let Err(e) = auth.require("monitoring.flag") {
+        return e.into_response();
+    }
     match MonitoringRepository::create_cheating_log(&state.pool, &req).await {
         Ok(log) => {
             // Broadcast to SSE listeners
@@ -77,15 +82,40 @@ pub async fn create_cheating_log(
     get,
     path = "/api/sessions/{session_id}/cheating-logs",
     tag = "monitoring",
-    params(("session_id" = Uuid, Path, description = "Exam session ID")),
-    responses((status = 200, description = "Cheating logs for session", body = Vec<CheatingLog>))
+    params(
+        ("session_id" = Uuid, Path, description = "Exam session ID"),
+        ListParams,
+    ),
+    responses((status = 200, description = "Paginated cheating logs for session", body = inline(ApiResponse<Vec<CheatingLog>>)))
 )]
 pub async fn list_cheating_logs(
+    auth: AuthContext,
     State(state): State<MonitoringState>,
     Path(session_id): Path<Uuid>,
+    Query(params): Query<ListParams>,
 ) -> Response {
-    match MonitoringRepository::list_cheating_logs_by_session(&state.pool, session_id).await {
-        Ok(logs) => ApiResponse::success(logs).into_response(),
+    if let Err(e) = auth.require("monitoring.view") {
+        return e.into_response();
+    }
+    let total = match MonitoringRepository::count_cheating_logs(&state.pool, session_id).await {
+        Ok(t) => t,
+        Err(e) => return e.into_response(),
+    };
+    match MonitoringRepository::list_cheating_logs_paginated(
+        &state.pool,
+        session_id,
+        params.limit(),
+        params.offset(),
+    )
+    .await
+    {
+        Ok(logs) => ApiResponse::success(logs)
+            .with_meta(Meta::paginated(
+                params.page(),
+                params.per_page(),
+                total as u64,
+            ))
+            .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -98,16 +128,20 @@ pub async fn list_cheating_logs(
     tag = "monitoring",
     params(("session_id" = Uuid, Path, description = "Exam session ID")),
     request_body = UpdateProgressRequest,
-    responses((status = 200, description = "Progress updated", body = ExamProgress))
+    responses((status = 200, description = "Progress updated", body = inline(ApiResponse<ExamProgress>)))
 )]
 pub async fn update_progress(
+    auth: AuthContext,
     State(state): State<MonitoringState>,
     Path(session_id): Path<Uuid>,
     Json(req): Json<UpdateProgressRequest>,
 ) -> Response {
+    // Participant updates own progress — exam.view is sufficient
+    if let Err(e) = auth.require("exam.view") {
+        return e.into_response();
+    }
     match MonitoringRepository::upsert_progress(&state.pool, session_id, &req).await {
         Ok(progress) => {
-            // Broadcast progress update
             let _ = state.tx.send(MonitorEvent {
                 event_type: "progress".into(),
                 exam_session_id: session_id,
@@ -129,14 +163,18 @@ pub async fn update_progress(
     tag = "monitoring",
     params(("session_id" = Uuid, Path, description = "Exam session ID")),
     responses(
-        (status = 200, description = "Current progress", body = ExamProgress),
+        (status = 200, description = "Current progress", body = inline(ApiResponse<ExamProgress>)),
         (status = 404, description = "No progress yet")
     )
 )]
 pub async fn get_progress(
+    auth: AuthContext,
     State(state): State<MonitoringState>,
     Path(session_id): Path<Uuid>,
 ) -> Response {
+    if let Err(e) = auth.require("monitoring.view") {
+        return e.into_response();
+    }
     match MonitoringRepository::get_progress(&state.pool, session_id).await {
         Ok(Some(p)) => ApiResponse::success(p).into_response(),
         Ok(None) => {
@@ -151,12 +189,16 @@ pub async fn get_progress(
     path = "/api/exams/{exam_id}/progress",
     tag = "monitoring",
     params(("exam_id" = Uuid, Path, description = "Exam ID")),
-    responses((status = 200, description = "All participant progress for exam", body = Vec<ExamProgress>))
+    responses((status = 200, description = "All participant progress for exam", body = inline(ApiResponse<Vec<ExamProgress>>)))
 )]
 pub async fn list_exam_progress(
+    auth: AuthContext,
     State(state): State<MonitoringState>,
     Path(exam_id): Path<Uuid>,
 ) -> Response {
+    if let Err(e) = auth.require("monitoring.view") {
+        return e.into_response();
+    }
     match MonitoringRepository::list_progress_by_exam(&state.pool, exam_id).await {
         Ok(list) => ApiResponse::success(list).into_response(),
         Err(e) => e.into_response(),
@@ -174,17 +216,28 @@ pub async fn list_exam_progress(
         ("resource_type" = Option<String>, Query, description = "Filter by resource type"),
         ("resource_id" = Option<Uuid>, Query, description = "Filter by resource ID"),
         ("event_id" = Option<Uuid>, Query, description = "Filter by event"),
-        ("limit" = Option<i64>, Query, description = "Max results (default 50, max 200)"),
-        ("offset" = Option<i64>, Query, description = "Offset for pagination"),
+        ListParams,
     ),
-    responses((status = 200, description = "Audit logs", body = Vec<AuditLog>))
+    responses((status = 200, description = "Paginated audit logs", body = inline(ApiResponse<Vec<AuditLog>>)))
 )]
 pub async fn query_audit_logs(
+    auth: AuthContext,
     State(state): State<MonitoringState>,
     Query(query): Query<AuditLogQuery>,
 ) -> Response {
+    if let Err(e) = auth.require("rbac.audit.view") {
+        return e.into_response();
+    }
+    let total = match MonitoringRepository::count_audit_logs(&state.pool, &query).await {
+        Ok(t) => t,
+        Err(e) => return e.into_response(),
+    };
+    let page = query.page.unwrap_or(1).max(1);
+    let per_page = query.per_page.unwrap_or(20).min(100).max(1);
     match MonitoringRepository::query_audit_logs(&state.pool, &query).await {
-        Ok(logs) => ApiResponse::success(logs).into_response(),
+        Ok(logs) => ApiResponse::success(logs)
+            .with_meta(Meta::paginated(page, per_page, total as u64))
+            .into_response(),
         Err(e) => e.into_response(),
     }
 }
@@ -199,31 +252,32 @@ pub async fn query_audit_logs(
     responses((status = 200, description = "SSE stream of exam events"))
 )]
 pub async fn monitor_stream(
+    auth: AuthContext,
     State(state): State<MonitoringState>,
     Path(exam_id): Path<Uuid>,
-) -> Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>> {
+) -> Response {
+    if let Err(e) = auth.require("exam.monitor") {
+        return e.into_response();
+    }
+
     let rx = state.tx.subscribe();
 
-    // Get all session IDs for this exam to filter events
-    let session_ids: Vec<Uuid> = sqlx::query_scalar::<_, Uuid>(
-        "SELECT id FROM exam_sessions WHERE exam_id = $1",
-    )
-    .bind(exam_id)
-    .fetch_all(&state.pool)
-    .await
-    .unwrap_or_default();
+    let session_ids: Vec<Uuid> =
+        sqlx::query_scalar::<_, Uuid>("SELECT id FROM exam_sessions WHERE exam_id = $1")
+            .bind(exam_id)
+            .fetch_all(&state.pool)
+            .await
+            .unwrap_or_default();
 
-    let stream = BroadcastStream::new(rx).filter_map(move |result| {
-        match result {
-            Ok(event) if session_ids.contains(&event.exam_session_id) => {
-                let data = serde_json::to_string(&event).unwrap_or_default();
-                Some(Ok(Event::default()
-                    .event(&event.event_type)
-                    .data(data)))
-            }
-            _ => None,
+    let stream = BroadcastStream::new(rx).filter_map(move |result| match result {
+        Ok(event) if session_ids.contains(&event.exam_session_id) => {
+            let data = serde_json::to_string(&event).unwrap_or_default();
+            Some(Ok::<Event, axum::BoxError>(Event::default().event(&event.event_type).data(data)))
         }
+        _ => None,
     });
 
-    Sse::new(stream).keep_alive(KeepAlive::default())
+    Sse::new(stream)
+        .keep_alive(KeepAlive::default())
+        .into_response()
 }
